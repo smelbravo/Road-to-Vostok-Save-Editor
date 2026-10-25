@@ -23,12 +23,16 @@ import {
   tradersLoadError
 } from './saveEditorState'
 import { loadSafehouses, saveSafehouseChanges } from './useSafehouses'
+import { loadMods } from './useMods'
 
 export async function init(): Promise<void> {
   isLoading.value = true
   loadError.value = null
   worldLoadError.value = null
   tradersLoadError.value = null
+
+  // Mods first: their items must be known before the save is projected into the UI.
+  await loadMods()
 
   try {
     const content = await window.api.loadSave('Character.tres')

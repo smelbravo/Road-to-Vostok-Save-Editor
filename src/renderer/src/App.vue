@@ -5,6 +5,7 @@ import { init } from './composables/useTresFileLoader'
 import TitleBar from './components/TitleBar.vue'
 import StatsPanel from './components/StatsPanel.vue'
 import InventoryPanel from './components/InventoryPanel.vue'
+import GearStoragePanel from './components/GearStoragePanel.vue'
 import FurniturePanel from './components/FurniturePanel.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import BackupsPanel from './components/BackupsPanel.vue'
@@ -70,6 +71,7 @@ onMounted(() => {
         <TabsList class="bg-transparent h-full p-0">
           <TabsTrigger value="character" :disabled="!!loadError">Character</TabsTrigger>
           <TabsTrigger value="inventory" :disabled="!!loadError">Inventory</TabsTrigger>
+          <TabsTrigger value="storage" :disabled="!!loadError">Gear Storage</TabsTrigger>
           <TabsTrigger value="furniture" :disabled="!!loadError">Furniture</TabsTrigger>
           <TabsTrigger value="cat" :disabled="!!loadError">Cat</TabsTrigger>
           <TabsTrigger value="world" :disabled="!!loadError || !world">World</TabsTrigger>
@@ -89,6 +91,11 @@ onMounted(() => {
       <TabsContent v-if="loadError" value="inventory" class="flex-1 min-h-0 p-4 mt-0" />
       <TabsContent v-else value="inventory" class="flex-1 min-h-0 p-4 mt-0">
         <InventoryPanel @open-add-dialog="openInventoryAddDialog" />
+      </TabsContent>
+
+      <TabsContent v-if="loadError" value="storage" class="flex-1 min-h-0 p-4 mt-0" />
+      <TabsContent v-else value="storage" class="flex-1 min-h-0 p-4 mt-0">
+        <GearStoragePanel />
       </TabsContent>
 
       <TabsContent v-if="loadError" value="furniture" class="flex-1 min-h-0 p-4 mt-0" />

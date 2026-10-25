@@ -7,6 +7,7 @@ import { registerSaveHandlers } from './ipc/save-handlers'
 import { registerIconHandlers } from './ipc/icon-handlers'
 import { registerBackupHandlers } from './ipc/backup-handlers'
 import { registerAppHandlers } from './ipc/app-handlers'
+import { registerModHandlers } from './ipc/mod-handlers'
 import { initAutoUpdater } from './updater'
 
 const ICON_CACHE_DIR = join(app.getPath('userData'), 'icon-cache')
@@ -71,6 +72,7 @@ app.whenReady().then(() => {
   registerIconHandlers()
   registerBackupHandlers()
   registerAppHandlers()
+  registerModHandlers()
 
   createWindow()
   initAutoUpdater()

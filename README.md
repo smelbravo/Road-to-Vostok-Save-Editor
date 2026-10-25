@@ -2,7 +2,17 @@
 
 A desktop save file editor for [Road to Vostok](https://store.steampowered.com/app/1963610/Road_to_Vostok/). Edit your character inventory, equipment, world settings, and more.
 
-**[Download latest release](https://github.com/FINDarkside/Road-to-Vostok-Save-Editor/releases)**
+> **This is a Build 2 update, not an original project.** The editor was created by [FINDarkside](https://github.com/FINDarkside/Road-to-Vostok-Save-Editor) and is released under the MIT license. This fork by smelbravo updates it for Road to Vostok **Build 2**, adds support for **Gear Storage Expansion (GSE)** and makes it work with other mods. All credit for the original editor goes to FINDarkside.
+
+**[Download latest release](https://github.com/smelbravo/Road-to-Vostok-Save-Editor/releases)**
+
+## What is new in this version
+
+- Build 2 save files.
+- **Gear Storage** tab: edit what is stored in backpacks, rigs and clothing with Gear Storage Expansion (gun slots, magazine pouches, medical pouches, open grids).
+- Items added by installed mods get their real name, size and category.
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Development
 
@@ -10,3 +20,9 @@ A desktop save file editor for [Road to Vostok](https://store.steampowered.com/a
 npm install
 npm run dev
 ```
+
+Checks that need no game files: `npx tsx scripts/test-storage-codec.ts` and `npx tsx scripts/test-mod-scan.ts`.
+
+## License
+
+MIT. Original work © FINDarkside, Build 2 update © smelbravo.

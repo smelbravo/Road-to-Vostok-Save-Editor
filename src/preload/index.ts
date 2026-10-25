@@ -13,6 +13,9 @@ const api = {
   getSaveDir: (): Promise<string> => ipcRenderer.invoke('saves:get-dir'),
   openSaveDir: (): Promise<void> => ipcRenderer.invoke('saves:open-dir'),
 
+  // Installed mods (Gear Storage Expansion, item mods, ...)
+  scanMods: (): Promise<ModScan> => ipcRenderer.invoke('mods:scan'),
+
   // Backups
   listBackups: (): Promise<BackupEntry[]> => ipcRenderer.invoke('backups:list'),
   restoreBackup: (folderName: string): Promise<void> =>
@@ -31,6 +34,38 @@ const api = {
     ipcRenderer.on('icons:progress', handler)
     return () => ipcRenderer.removeListener('icons:progress', handler)
   }
+}
+
+export interface InstalledMod {
+  file: string
+  id: string
+  name: string
+  version: string
+  author: string
+}
+
+export interface ModItem {
+  category: string
+  id: string
+  displayName: string
+  resourcePath: string
+  sizeW: number
+  sizeH: number
+  stackable: boolean
+  showAmount: boolean
+  defaultAmount: number
+  maxAmount: number
+  showCondition: boolean
+  slots: string[]
+  modId: string
+}
+
+export interface ModScan {
+  modsDir: string | null
+  mods: InstalledMod[]
+  items: ModItem[]
+  gseSettingsIni: string | null
+  warnings: string[]
 }
 
 export interface BackupEntry {

@@ -31,7 +31,7 @@ async function handleSave() {
 
     <div class="ml-auto flex items-center gap-2">
       <a
-        href="https://github.com/FINDarkside/Road-to-Vostok-Save-Editor"
+        href="https://github.com/smelbravo/Road-to-Vostok-Save-Editor"
         target="_blank"
         class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >

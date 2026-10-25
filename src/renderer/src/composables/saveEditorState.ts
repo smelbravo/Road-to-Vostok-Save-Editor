@@ -102,28 +102,36 @@ export function markTradersDirty(): void {
   if (traders.value) traders.value = { ...traders.value }
 }
 
-export function findAndRemove(id: string): SlotItemData | null {
+/**
+ * Finds an item by sub-resource id in the inventory, equipment and furniture lists and,
+ * below them, inside the `storage` of every item (Gear Storage Expansion keeps what a
+ * bag holds there). Returns the item together with the array that owns it.
+ */
+export function findItemDeep(id: string): { item: SlotItemData; owner: SlotItemData[] } | null {
   const c = character.value
   if (!c) return null
-  for (const target of ['inventory', 'equipment', 'catalog'] as const) {
-    const arr = c[target]
-    const idx = arr.findIndex((i) => i.id === id)
-    if (idx >= 0) {
-      const [removed] = arr.splice(idx, 1)
-      return removed
+  const search = (list: SlotItemData[]): { item: SlotItemData; owner: SlotItemData[] } | null => {
+    for (const item of list) if (item.id === id) return { item, owner: list }
+    for (const item of list) {
+      if (item.storage.length === 0) continue
+      const inner = search(item.storage)
+      if (inner) return inner
     }
+    return null
   }
-  return null
+  return search(c.inventory) ?? search(c.equipment) ?? search(c.catalog)
+}
+
+export function findAndRemove(id: string): SlotItemData | null {
+  const found = findItemDeep(id)
+  if (!found) return null
+  const idx = found.owner.indexOf(found.item)
+  found.owner.splice(idx, 1)
+  return found.item
 }
 
 export function findItemInAnyArray(id: string): SlotItemData | undefined {
-  const c = character.value
-  if (!c) return undefined
-  return (
-    c.inventory.find((i) => i.id === id) ??
-    c.equipment.find((i) => i.id === id) ??
-    c.catalog.find((i) => i.id === id)
-  )
+  return findItemDeep(id)?.item
 }
 
 export function freshSlotItem(

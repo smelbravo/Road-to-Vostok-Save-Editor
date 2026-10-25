@@ -3,7 +3,8 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { catalogItems } from '../composables/saveEditorState'
 import { addItem, addCatalogItem } from '../composables/useInventoryItems'
 import { useInventoryGrid, CATALOG_COLS, CATALOG_ROWS } from '../composables/useInventoryGrid'
-import { ITEMS, resolveItemMeta, getItemSize } from '../data/items'
+import { resolveItemMeta, getItemSize } from '../data/items'
+import { allItems } from '../data/mod-items'
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { useItemIcons } from '../composables/useItemIcons'
+import type { GameItem } from '../lib/types'
 
 const props = withDefaults(
   defineProps<{
@@ -41,12 +43,10 @@ const dialogTitle = computed(() => (isCatalog.value ? 'Add Furniture' : 'Add Ite
 const searchPlaceholder = computed(() =>
   isCatalog.value ? 'Search furniture...' : 'Search items...'
 )
-type ItemsArray = typeof ITEMS
-const visibleItems = computed<ItemsArray>(
-  () =>
-    (isCatalog.value
-      ? ITEMS.filter((i) => i.category === 'Furniture')
-      : ITEMS.filter((i) => i.category !== 'Furniture')) as ItemsArray
+const visibleItems = computed<GameItem[]>(() =>
+  isCatalog.value
+    ? allItems.value.filter((i) => i.category === 'Furniture')
+    : allItems.value.filter((i) => i.category !== 'Furniture')
 )
 
 const iconTick = ref(0)
@@ -231,7 +231,7 @@ function reset(): void {
         >
           <button
             v-for="(item, i) in filteredItems"
-            :key="item.id"
+            :key="item.resourcePath"
             class="w-full flex items-center gap-2 px-2 py-1 rounded text-sm text-left hover:bg-accent"
             :class="{ 'bg-accent': i === selectedIndex }"
             @click="selectedIndex = i"

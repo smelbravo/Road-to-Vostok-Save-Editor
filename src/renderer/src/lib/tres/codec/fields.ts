@@ -1,4 +1,4 @@
-import type { TresValue, TresTypedArray } from '../types'
+import type { TresTypedArray } from '../types'
 import type { FieldCodec, ParseCtx, SerializeCtx, ResourceCodec, WithId } from './types'
 
 /**
@@ -218,13 +218,16 @@ export function stringArray(opts: { default?: string[] } = {}): FieldCodec<strin
  * SlotData script in Character.tres). It's used in the `Array[...]` annotation.
  */
 export function subRefArray<T>(
-  itemSchema: ResourceCodec<T>,
+  itemSchemaOrGetter: ResourceCodec<T> | (() => ResourceCodec<T>),
   opts: {
     default?: WithId<T>[]
     elementTypePath: string
   }
 ): FieldCodec<WithId<T>[]> {
   const defaultValue = opts.default ?? []
+  // A getter lets a schema refer to itself (SlotData.storage holds SlotData).
+  const schema = (): ResourceCodec<T> =>
+    typeof itemSchemaOrGetter === 'function' ? itemSchemaOrGetter() : itemSchemaOrGetter
   return {
     default: defaultValue,
     parse: (v, ctx) => {
@@ -234,11 +237,14 @@ export function subRefArray<T>(
         if (el.kind !== 'sub_resource') continue
         const sub = ctx.tres.subResources.find((s) => s.id === el.id)
         if (!sub) continue
-        items.push({ id: sub.id, ...itemSchema.parse(sub.properties, ctx) } as WithId<T>)
+        items.push({ id: sub.id, ...schema().parse(sub.properties, ctx) } as WithId<T>)
       }
       return items
     },
     serialize: (current, source, ctx) => {
+      // Absent in the file and still empty: keep omitting it (the game does too).
+      if (!source && current.length === 0 && defaultValue.length === 0) return null
+
       const [typeId] = ensureExtIds(ctx, [opts.elementTypePath])
       const elementType = `ExtResource("${typeId}")`
 
@@ -246,7 +252,7 @@ export function subRefArray<T>(
       // sub-resources (matched by id) so unknown properties pass through.
       const existingSubs = new Map(ctx.tres.subResources.map((s) => [s.id, s]))
       const newElements: TresTypedArray['elements'] = []
-      const keptIds = new Set<string>()
+      const newIds: string[] = []
 
       for (const item of current) {
         const { id, ...data } = item as WithId<T> & { id: string }
@@ -254,7 +260,7 @@ export function subRefArray<T>(
         const sub = {
           id,
           type: 'Resource',
-          properties: itemSchema.serialize(data as T, existing ? existing.properties : null, ctx)
+          properties: schema().serialize(data as T, existing ? existing.properties : null, ctx)
         }
         // Replace in place (keeps insertion order) or append
         const idx = ctx.tres.subResources.findIndex((s) => s.id === id)
@@ -263,24 +269,25 @@ export function subRefArray<T>(
         } else {
           ctx.tres.subResources.push(sub)
         }
-        keptIds.add(id)
         newElements.push({ kind: 'sub_resource', id })
+        newIds.push(id)
       }
 
-      // Garbage-collect sub-resources that this array owned but no longer
-      // references. We do this by scanning `source` for orphans; other arrays
-      // that may reference the same sub-resources handle their own lifecycle.
-      if (source && source.kind === 'typed_array') {
-        for (const el of source.elements) {
-          if (el.kind !== 'sub_resource') continue
-          if (keptIds.has(el.id)) continue
-          // Check if any other property still references it before removing.
-          if (!isSubReferencedElsewhere(ctx, el.id, source)) {
-            const idx = ctx.tres.subResources.findIndex((s) => s.id === el.id)
-            if (idx >= 0) ctx.tres.subResources.splice(idx, 1)
-          }
-        }
+      // Same members in the same order as the source: keep its exact tokens.
+      if (
+        source &&
+        source.kind === 'typed_array' &&
+        source.elementType === elementType &&
+        source.elements.length === newIds.length &&
+        source.elements.every((el, i) => el.kind === 'sub_resource' && el.id === newIds[i])
+      ) {
+        return source
       }
+
+      // Sub-resources that this array no longer references are NOT dropped here:
+      // the item may have moved to another array (inventory -> equipment) and
+      // must keep its unknown properties. `finalizeSubResources` removes the
+      // ones that really became unreachable once the whole file is rebuilt.
 
       return {
         kind: 'typed_array',
@@ -297,32 +304,6 @@ function arraysEqual<T>(a: T[], b: T[]): boolean {
   if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
   return true
-}
-
-/**
- * Check whether a sub_resource id is still referenced anywhere in the file
- * outside of the given source typed_array. Used to avoid dropping sub-resources
- * that appear in multiple arrays (e.g. moved between inventory and equipment
- * during the same save cycle).
- */
-function isSubReferencedElsewhere(
-  ctx: SerializeCtx,
-  subId: string,
-  excludeArray: TresValue
-): boolean {
-  function scan(val: TresValue): boolean {
-    if (val === excludeArray) return false
-    if (val.kind === 'sub_resource' && val.id === subId) return true
-    if (val.kind === 'typed_array') return val.elements.some(scan)
-    return false
-  }
-  for (const prop of ctx.tres.resource) {
-    if (scan(prop.value)) return true
-  }
-  for (const sub of ctx.tres.subResources) {
-    for (const prop of sub.properties) if (scan(prop.value)) return true
-  }
-  return false
 }
 
 /** Handy re-export for schema files. */

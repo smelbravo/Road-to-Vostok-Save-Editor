@@ -62,6 +62,10 @@ export interface GameItem {
   armorRating?: string
   /** Storage container grid size for storage furniture (lockers, cabinets, fridge, etc.) */
   containerSize?: { w: number; h: number }
+  /** Added by an installed mod rather than shipped in the built-in catalog */
+  modded?: boolean
+  /** mod.txt id of the mod that adds this item */
+  modId?: string
 }
 
 export interface ResolvedItemMeta {

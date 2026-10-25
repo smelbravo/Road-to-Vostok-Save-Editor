@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useItemIcons } from '../composables/useItemIcons'
+import { installedMods, modScan, modScanError, loadMods } from '../composables/useMods'
+import { modItems } from '../data/mod-items'
 import { Button } from '../components/ui/button'
 import { LoaderCircle, FolderOpen } from 'lucide-vue-next'
 
@@ -67,5 +69,45 @@ onMounted(async () => {
     <p v-if="status === 'not-found'" class="text-xs text-muted-foreground">
       Icons are extracted from the game's PCK file and require the game to be installed via Steam.
     </p>
+
+    <!-- Installed mods -->
+    <div class="space-y-2 pt-2 border-t border-border">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-muted-foreground shrink-0">Installed mods</span>
+        <span v-if="modScanError" class="text-sm text-destructive">{{ modScanError }}</span>
+        <span v-else-if="!modScan?.modsDir" class="text-sm text-muted-foreground">
+          Mods folder not found
+        </span>
+        <span v-else class="text-sm">
+          {{ installedMods.length }} found, {{ modItems.length }} modded item{{
+            modItems.length === 1 ? '' : 's'
+          }}
+          added to the catalog
+        </span>
+        <Button variant="outline" size="sm" class="text-xs shrink-0" @click="loadMods">
+          Rescan
+        </Button>
+      </div>
+      <p
+        v-if="modScan?.modsDir"
+        class="text-xs text-muted-foreground select-text truncate"
+        :title="modScan.modsDir"
+      >
+        {{ modScan.modsDir }}
+      </p>
+      <ul v-if="installedMods.length > 0" class="text-xs space-y-0.5">
+        <li v-for="mod in installedMods" :key="mod.file" class="flex gap-2">
+          <span class="font-medium">{{ mod.name }}</span>
+          <span class="text-muted-foreground"
+            >{{ mod.id }}{{ mod.version ? ` · v${mod.version}` : '' }}</span
+          >
+        </li>
+      </ul>
+      <p v-for="w in modScan?.warnings ?? []" :key="w" class="text-xs text-yellow-400">{{ w }}</p>
+      <p class="text-xs text-muted-foreground">
+        Items added by mods get their name, size and category from the mod itself. Anything the
+        editor does not recognise is kept untouched when you save.
+      </p>
+    </div>
   </div>
 </template>
