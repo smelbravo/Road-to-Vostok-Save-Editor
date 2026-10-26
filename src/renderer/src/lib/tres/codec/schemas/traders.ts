@@ -10,6 +10,8 @@ export const tradersSchema = resource({
   doctor: f.stringArray({ default: [] }),
   gunsmith: f.stringArray({ default: [] }),
   grandma: f.stringArray({ default: [] }),
+  driver: f.stringArray({ default: [] }),
+  hunter: f.stringArray({ default: [] }),
   taskNotes: f.extRefArray({ default: [], elementTypePath: TASK_DATA_SCRIPT })
 })
 

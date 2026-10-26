@@ -5,6 +5,7 @@ import {
   storedItemCount,
   editableFields,
   moveStoredToInventory,
+  moveStoredItem,
   removeStoredItem,
   updateStoredItem,
   type StorageContainer,
@@ -83,6 +84,55 @@ function entryStyle(entry: StoredEntry): Record<string, string> {
 
 function iconOf(path: string): string {
   return ITEMS_BY_PATH.get(path)?.iconFile ?? ''
+}
+
+// Drag and drop between slots and cells (HTML5 drag events)
+const dragId = ref<string | null>(null)
+const dragGrab = ref({ x: 0, y: 0 })
+const dropTarget = ref<string | null>(null)
+
+function onDragStart(event: DragEvent, entry: StoredEntry): void {
+  dragId.value = entry.id
+  selectedId.value = entry.id
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  dragGrab.value = {
+    x: Math.max(0, Math.min(entry.w - 1, Math.floor((event.clientX - rect.left) / CELL_UI))),
+    y: Math.max(0, Math.min(entry.h - 1, Math.floor((event.clientY - rect.top) / CELL_UI)))
+  }
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', entry.id)
+  }
+}
+
+function onDragEnd(): void {
+  dragId.value = null
+  dropTarget.value = null
+}
+
+function targetKey(container: StorageContainer, section: StorageSection): string {
+  return `${container.holderId}|${section.spec.key}`
+}
+
+function onDragOver(event: DragEvent, container: StorageContainer, section: StorageSection): void {
+  if (!dragId.value) return
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+  dropTarget.value = targetKey(container, section)
+}
+
+function onDrop(event: DragEvent, container: StorageContainer, section: StorageSection): void {
+  const id = dragId.value
+  dragId.value = null
+  dropTarget.value = null
+  if (!id) return
+  event.preventDefault()
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  const col = Math.floor((event.clientX - rect.left) / CELL_UI) - dragGrab.value.x
+  const row = Math.floor((event.clientY - rect.top) / CELL_UI) - dragGrab.value.y
+  const result = moveStoredItem(id, container.holderId, section, col, row)
+  if (!result.ok) toast.show(result.message, 'error')
+  else if (result.message) toast.show(result.message, 'error')
 }
 
 function openAdd(container: StorageContainer, section: StorageSection): void {
@@ -238,7 +288,11 @@ const statusLine = computed(() => {
 
             <div
               class="relative rounded-sm border border-border/70 bg-background/60 stor-grid"
+              :class="dropTarget === targetKey(container, section) ? 'ring-2 ring-primary/70' : ''"
               :style="gridStyle(section)"
+              @dragover="onDragOver($event, container, section)"
+              @dragleave="dropTarget = null"
+              @drop="onDrop($event, container, section)"
             >
               <button
                 v-for="entry in section.entries"
@@ -252,13 +306,16 @@ const statusLine = computed(() => {
                       : 'border-border/60'
                 "
                 :style="entryStyle(entry)"
+                draggable="true"
+                @dragstart="onDragStart($event, entry)"
+                @dragend="onDragEnd"
                 :title="`${entry.item.itemName}${entry.problem ? '\n' + entry.problem : ''}`"
                 @click="selectedId = entry.id"
               >
                 <ItemIcon
                   v-if="iconOf(entry.item.itemPath)"
                   :icon-file="iconOf(entry.item.itemPath)"
-                  class="max-h-full max-w-full"
+                  class="max-h-full max-w-full pointer-events-none"
                 />
                 <span v-else class="text-[10px] leading-tight text-center px-0.5 break-words">
                   {{ entry.item.nameInventory }}

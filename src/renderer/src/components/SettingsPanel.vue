@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useItemIcons } from '../composables/useItemIcons'
 import { installedMods, modScan, modScanError, loadMods, gameCatalog } from '../composables/useMods'
+import { gameTaskStats } from '../composables/useGameTasks'
 import { sourceInfo, hasSlots, chooseSource, slotLabel } from '../composables/useSaveSource'
 import { init } from '../composables/useTresFileLoader'
 import { isDirty } from '../composables/saveEditorState'
@@ -145,6 +146,12 @@ onMounted(refreshDir)
           ({{ modScan.profiles.length }} profiles found)
         </template>
       </p>
+      <div v-if="(modScan?.iconProblems.length ?? 0) > 0" class="text-xs text-yellow-400">
+        Modded items without an icon:
+        <span v-for="p in modScan?.iconProblems" :key="p.reason" class="block pl-3 select-text">
+          {{ p.count }} × {{ p.reason }} (e.g. {{ p.examples.join(', ') }})
+        </span>
+      </div>
       <p v-if="gameCatalog" class="text-xs text-muted-foreground">
         <template v-if="!gameCatalog.found"
           >Game files not found: using the built-in item list.</template
@@ -161,6 +168,15 @@ onMounted(refreshDir)
               gameCatalog.trusted ? '' : ' (below threshold, only names from file paths are used)'
             }}.
           </template>
+        </template>
+      </p>
+      <p v-if="gameTaskStats" class="text-xs text-muted-foreground select-text">
+        Tasks in the game files: {{ gameTaskStats.found }} found, {{ gameTaskStats.added }} not in
+        the built-in list added<template v-if="gameTaskStats.unmatched > 0"
+          >, {{ gameTaskStats.unmatched }} without a trader</template
+        >.
+        <template v-if="gameTaskStats.propertyNames.length > 0">
+          Properties: {{ gameTaskStats.propertyNames.join(', ') }}.
         </template>
       </p>
       <p v-for="w in gameCatalog?.warnings ?? []" :key="w" class="text-xs text-yellow-400">

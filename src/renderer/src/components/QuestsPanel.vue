@@ -1,40 +1,44 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { traders } from '../composables/saveEditorState'
 import { toggleQuestCompletion, setAllQuestsForTrader } from '../composables/useQuests'
-import { TRADERS, QUESTS_BY_TRADER, type TraderKey, type QuestItem } from '../data/quests'
+import { TRADERS, type TraderKey, type QuestItem } from '../data/quests'
+import { questsByTrader } from '../composables/useGameTasks'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { ScrollText } from 'lucide-vue-next'
 
-const tradersWithQuests = TRADERS.filter((t) => (QUESTS_BY_TRADER.get(t.key)?.length ?? 0) > 0)
+const tradersWithQuests = computed(() =>
+  TRADERS.filter((t) => (questsByTrader.value.get(t.key)?.length ?? 0) > 0)
+)
 
 function isCompleted(traderKey: TraderKey, questName: string): boolean {
   return traders.value?.[traderKey].includes(questName) ?? false
 }
 
 function completedCount(traderKey: TraderKey): number {
-  const quests = QUESTS_BY_TRADER.get(traderKey) ?? []
+  const quests = questsByTrader.value.get(traderKey) ?? []
   return quests.filter((q) => isCompleted(traderKey, q.name)).length
 }
 
 function completeTrader(traderKey: TraderKey): void {
-  const names = (QUESTS_BY_TRADER.get(traderKey) ?? []).map((q) => q.name)
+  const names = (questsByTrader.value.get(traderKey) ?? []).map((q) => q.name)
   setAllQuestsForTrader(traderKey, names, true)
 }
 
 function resetTrader(traderKey: TraderKey): void {
-  const names = (QUESTS_BY_TRADER.get(traderKey) ?? []).map((q) => q.name)
+  const names = (questsByTrader.value.get(traderKey) ?? []).map((q) => q.name)
   setAllQuestsForTrader(traderKey, names, false)
 }
 
 function completeAll(): void {
-  for (const trader of tradersWithQuests) {
+  for (const trader of tradersWithQuests.value) {
     completeTrader(trader.key)
   }
 }
 
 function resetAll(): void {
-  for (const trader of tradersWithQuests) {
+  for (const trader of tradersWithQuests.value) {
     resetTrader(trader.key)
   }
 }
@@ -68,7 +72,7 @@ function difficultyVariant(difficulty: string) {
         <div class="flex items-center gap-2">
           <h3 class="text-sm font-semibold">{{ trader.displayName }}</h3>
           <span class="text-xs text-muted-foreground">
-            {{ completedCount(trader.key) }}/{{ QUESTS_BY_TRADER.get(trader.key)?.length ?? 0 }}
+            {{ completedCount(trader.key) }}/{{ questsByTrader.value.get(trader.key)?.length ?? 0 }}
             completed
           </span>
         </div>
@@ -84,7 +88,7 @@ function difficultyVariant(difficulty: string) {
 
       <div class="space-y-1">
         <label
-          v-for="quest in QUESTS_BY_TRADER.get(trader.key)"
+          v-for="quest in questsByTrader.value.get(trader.key)"
           :key="quest.name"
           class="flex items-center gap-3 text-sm cursor-pointer select-none rounded-md border border-border px-3 py-2 hover:bg-muted/50 transition-colors"
           :class="isCompleted(trader.key, quest.name) ? 'border-primary/50 bg-primary/5' : ''"

@@ -21,6 +21,7 @@ const api = {
   // Installed mods (Gear Storage Expansion, item mods, ...) and the game's own items
   scanMods: (): Promise<ModScan> => ipcRenderer.invoke('mods:scan'),
   scanGameItems: (): Promise<GameCatalog> => ipcRenderer.invoke('mods:scan-game'),
+  scanGameTasks: (): Promise<GameTaskScan> => ipcRenderer.invoke('mods:scan-tasks'),
 
   // Backups
   listBackups: (): Promise<BackupEntry[]> => ipcRenderer.invoke('backups:list'),
@@ -76,6 +77,7 @@ export interface ModScan {
   gseSettingsIni: string | null
   activeProfile: string
   profiles: string[]
+  iconProblems: { reason: string; count: number; examples: string[] }[]
   warnings: string[]
 }
 
@@ -98,6 +100,18 @@ export interface SourceInfo {
   activeSlot: number
   slots: SlotInfo[]
   dir: string
+}
+
+export interface GameTask {
+  path: string
+  scriptClass: string
+  props: Record<string, string | number | boolean | (string | number | boolean)[] | null>
+}
+
+export interface GameTaskScan {
+  tasks: GameTask[]
+  checked: number
+  propertyNames: string[]
 }
 
 export interface GameCatalog {

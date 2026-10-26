@@ -48,6 +48,8 @@ export interface ModItem {
   iconPath?: string
   /** Icon cache key once the icon was extracted (see ScanOptions.onIcon) */
   iconFile?: string
+  /** Why no icon could be extracted (diagnostics) */
+  iconProblem?: string
 }
 
 export interface ModScan {
@@ -59,6 +61,8 @@ export interface ModScan {
   /** Active Metro Mod Loader / RTV Mod Manager profile ('' when none) and all known names */
   activeProfile: string
   profiles: string[]
+  /** Modded items that got no icon, by reason, with a few examples */
+  iconProblems: { reason: string; count: number; examples: string[] }[]
   warnings: string[]
 }
 
@@ -173,7 +177,7 @@ const TYPE_TO_CATEGORY: Record<string, string> = {
   Weapon: 'Weapons'
 }
 
-function resourceProps(text: string): Record<string, string> {
+export function resourceProps(text: string): Record<string, string> {
   const idx = text.search(/^\[resource\]\s*$/m)
   if (idx < 0) return {}
   const props: Record<string, string> = {}
@@ -242,7 +246,8 @@ const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024
 const MAX_TRES_BYTES = 256 * 1024
 
 /** Receives an icon found inside a mod; returns true when it was stored under `key`. */
-export type IconSink = (key: string, ext: string, data: Buffer) => Promise<boolean>
+/** true when stored, otherwise the reason it could not be */
+export type IconSink = (key: string, ext: string, data: Buffer) => Promise<true | string>
 
 const safeKey = (s: string): string => s.replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 80)
 
@@ -252,19 +257,24 @@ async function extractItemIcon(
   item: ModItem,
   sink: IconSink
 ): Promise<void> {
-  if (!item.iconPath) return
+  if (!item.iconPath) {
+    item.iconProblem = 'item has no icon property'
+    return
+  }
   const want = item.iconPath.replace(/^res:\/\//, '').toLowerCase()
   const find = (name: string): ZipEntry | undefined =>
     entries.find((e) => e.name.toLowerCase() === name)
   const stem = (item.iconPath.split('/').pop() ?? 'icon').replace(/\.[^.]+$/, '')
   const key = `mod_${safeKey(item.modId)}_${safeKey(stem)}`
+  const done = (r: true | string): void => {
+    if (r === true) item.iconFile = key
+    else item.iconProblem = r
+  }
   const direct = find(want)
-  if (direct && direct.size < 16 * 1024 * 1024) {
-    const ext = want.split('.').pop() ?? ''
-    if (['png', 'jpg', 'jpeg'].includes(ext)) {
-      if (await sink(key, ext, await readZipEntry(buf, direct))) item.iconFile = key
-      return
-    }
+  const ext = want.split('.').pop() ?? ''
+  if (direct && direct.size < 16 * 1024 * 1024 && ['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
+    done(await sink(key, ext, await readZipEntry(buf, direct)))
+    return
   }
   // Imported texture: <icon>.import names the .ctex that holds the pixels
   const imp = find(want + '.import')
@@ -274,9 +284,27 @@ async function extractItemIcon(
     )?.[1]
     const ctex = target ? find(target.toLowerCase()) : undefined
     if (ctex && ctex.size < 16 * 1024 * 1024) {
-      if (await sink(key, 'ctex', await readZipEntry(buf, ctex))) item.iconFile = key
+      done(await sink(key, 'ctex', await readZipEntry(buf, ctex)))
+      return
     }
+    item.iconProblem = 'imported texture (.ctex) not in archive'
+    return
   }
+  // Last resort: any imported texture that belongs to this image
+  const base = (item.iconPath.split('/').pop() ?? '').toLowerCase()
+  const loose = base
+    ? entries.find((e) => {
+        const n = e.name.toLowerCase()
+        return n.endsWith('.ctex') && n.includes(base)
+      })
+    : undefined
+  if (loose && loose.size < 16 * 1024 * 1024) {
+    done(await sink(key, 'ctex', await readZipEntry(buf, loose)))
+    return
+  }
+  item.iconProblem = direct
+    ? `unsupported icon format .${ext}`
+    : 'icon file not found in the mod archive'
 }
 
 export async function scanModArchive(
@@ -368,12 +396,23 @@ export async function scanMods(opts: ScanOptions): Promise<Omit<ModScan, 'modsDi
     gseSettingsIni: null,
     activeProfile: '',
     profiles: [],
+    iconProblems: [],
     warnings: []
   }
   if (opts.modsDir) {
     await scanFolder(opts.modsDir, 'mods', result, opts.onIcon)
     await scanFolder(join(opts.modsDir, 'Library'), 'library', result, opts.onIcon)
   }
+
+  const problems = new Map<string, { count: number; examples: string[] }>()
+  for (const item of result.items) {
+    if (!item.iconProblem) continue
+    const entry = problems.get(item.iconProblem) ?? { count: 0, examples: [] }
+    entry.count++
+    if (entry.examples.length < 4) entry.examples.push(`${item.modId}: ${item.id}`)
+    problems.set(item.iconProblem, entry)
+  }
+  result.iconProblems = [...problems].map(([reason, v]) => ({ reason, ...v }))
 
   const state = await readProfileState(opts.userDir, opts.managerDir)
   result.activeProfile = state.active

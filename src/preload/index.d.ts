@@ -30,6 +30,7 @@ interface SaveApi {
   // Installed mods
   scanMods(): Promise<ModScan>
   scanGameItems(): Promise<GameCatalog>
+  scanGameTasks(): Promise<GameTaskScan>
 
   // Backups
   listBackups(): Promise<BackupEntry[]>
@@ -83,6 +84,8 @@ declare global {
     /** Active Metro Mod Loader / RTV Mod Manager profile ('' when none) and every known profile */
     activeProfile: string
     profiles: string[]
+    /** Modded items without an icon, by reason, with examples */
+    iconProblems: { reason: string; count: number; examples: string[] }[]
     warnings: string[]
   }
 
@@ -106,6 +109,18 @@ declare global {
     slots: SlotInfo[]
     /** Folder the editor currently reads from */
     dir: string
+  }
+
+  interface GameTask {
+    path: string
+    scriptClass: string
+    props: Record<string, string | number | boolean | (string | number | boolean)[] | null>
+  }
+
+  interface GameTaskScan {
+    tasks: GameTask[]
+    checked: number
+    propertyNames: string[]
   }
 
   interface GameCatalog {

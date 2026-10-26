@@ -25,6 +25,7 @@ import {
 import { loadSafehouses, saveSafehouseChanges } from './useSafehouses'
 import { loadMods, loadGameItems } from './useMods'
 import { refreshSourceInfo } from './useSaveSource'
+import { loadGameTasks } from './useGameTasks'
 
 export async function init(): Promise<void> {
   isLoading.value = true
@@ -34,7 +35,7 @@ export async function init(): Promise<void> {
 
   // Mods first: their items must be known before the save is projected into the UI.
   await refreshSourceInfo()
-  await Promise.all([loadMods(), loadGameItems()])
+  await Promise.all([loadMods(), loadGameItems(), loadGameTasks()])
 
   try {
     const content = await window.api.loadSave('Character.tres')

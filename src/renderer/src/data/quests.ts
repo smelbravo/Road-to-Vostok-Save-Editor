@@ -2,7 +2,9 @@ export const TRADERS = [
   { key: 'generalist', displayName: 'Generalist' },
   { key: 'doctor', displayName: 'Doctor' },
   { key: 'gunsmith', displayName: 'Gunsmith' },
-  { key: 'grandma', displayName: 'Grandma' }
+  { key: 'grandma', displayName: 'Grandma' },
+  { key: 'driver', displayName: 'Driver' },
+  { key: 'hunter', displayName: 'Hunter' }
 ] as const
 
 export type TraderKey = (typeof TRADERS)[number]['key']

@@ -264,6 +264,62 @@ export function moveStoredToInventory(itemId: string): StoreResult {
   return { ok: true, message: '' }
 }
 
+function containsDeep(root: SlotItemData, id: string): boolean {
+  return root.storage.some((s) => s.id === id || containsDeep(s, id))
+}
+
+/**
+ * Moves a stored item to another slot or grid cell, in the same bag or in another one.
+ * `col`/`row` are the top-left cell inside an open grid (ignored for boxes).
+ */
+export function moveStoredItem(
+  itemId: string,
+  targetHolderId: string,
+  section: StorageSection,
+  col: number,
+  row: number
+): StoreResult {
+  const found = findItemDeep(itemId)
+  const target = holderOf(targetHolderId)
+  if (!found || !target) return { ok: false, message: 'Item not found.' }
+  const { item } = found
+  if (target.id === item.id || containsDeep(item, target.id))
+    return { ok: false, message: 'A bag cannot be put inside itself.' }
+  const { spec } = section
+  // everything already in that section except the item being moved
+  const others = section.entries.filter((e) => e.id !== itemId)
+  let gridCol = 0
+  let gridRow = 0
+  if (isBox(spec.kind)) {
+    if (others.length > 0) return { ok: false, message: `${spec.caption} is already occupied.` }
+  } else {
+    const size = sizeOf(item.itemData, item.gridRotated)
+    if (col < 0 || row < 0 || col + size.w > spec.w || row + size.h > spec.h)
+      return { ok: false, message: `Does not fit there in ${spec.caption}.` }
+    const taken = cellsTaken(others)
+    for (let r = row; r < row + size.h; r++)
+      for (let c = col; c < col + size.w; c++)
+        if (taken.has(`${c},${r}`)) return { ok: false, message: 'That spot is taken.' }
+    gridCol = col
+    gridRow = row
+  }
+  const sameOwner = found.owner === target.storage
+  if (!sameOwner) {
+    found.owner.splice(found.owner.indexOf(item), 1)
+    target.storage.push(item)
+  }
+  item.slot = spec.key
+  item.gridPosition = { x: gridCol * CELL, y: gridRow * CELL }
+  markDirty()
+  const warn =
+    isBox(spec.kind) &&
+    ITEMS_BY_PATH.has(item.itemData) &&
+    !boxAccepts(spec.kind, factsOf(item.itemData))
+      ? `This is not a usual ${spec.caption.toLowerCase()} item (${spec.tip}); GSE may move it when the game loads.`
+      : ''
+  return { ok: true, message: warn }
+}
+
 export function removeStoredItem(itemId: string): void {
   const found = findItemDeep(itemId)
   if (!found) return

@@ -1,4 +1,4 @@
-import { parseItemTres, type ModItem } from './mods'
+import { parseItemTres, resourceProps, type ModItem } from './mods'
 
 /**
  * Reads the game's own items out of the game archive (RTV.pck), so items added by game
@@ -456,4 +456,100 @@ export async function scanGameItems(
     } else if (failed) result.unreadable++
   }
   return result
+}
+
+// ---------------------------------------------------------------------------
+// Tasks (TaskData resources). The property names are not known for sure, so every simple
+// property is returned and the renderer picks the ones it understands.
+// ---------------------------------------------------------------------------
+
+export interface GameTask {
+  path: string
+  scriptClass: string
+  props: Record<string, string | number | boolean | (string | number | boolean)[] | null>
+}
+
+export interface GameTaskScan {
+  tasks: GameTask[]
+  /** Resources looked at, and the property names seen (for diagnostics) */
+  checked: number
+  propertyNames: string[]
+}
+
+type TaskValue = GameTask['props'][string]
+
+function simplify(v: RsrcValue | undefined): TaskValue {
+  if (v === undefined || v === null) return null
+  if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return v
+  if (Array.isArray(v)) {
+    return v.map((x) =>
+      typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean'
+        ? x
+        : x && typeof x === 'object' && !Array.isArray(x)
+          ? x.ref
+          : ''
+    )
+  }
+  return v.ref
+}
+
+function textValue(raw: string): TaskValue {
+  const t = raw.trim()
+  if (t === 'true') return true
+  if (t === 'false') return false
+  if (/^-?\d+(\.\d+)?$/.test(t)) return Number(t)
+  if (t.startsWith('"') && t.endsWith('"')) return t.slice(1, -1)
+  return [...t.matchAll(/"([^"]*)"/g)].map((m) => m[1])
+}
+
+export async function scanGameTasks(
+  files: PckFile[],
+  read: (file: PckFile) => Promise<Buffer>
+): Promise<GameTaskScan> {
+  const norm = (p: string): string => {
+    const clean = p.replace(/\\/g, '/').replace(/^\/+/, '')
+    return clean.startsWith('res://') ? clean : 'res://' + clean
+  }
+  const all = files.map((f) => ({ ...f, path: norm(f.path) }))
+  const byPath = new Map(all.map((f) => [f.path, f]))
+  const stubs = all.filter((f) => /\.tres(\.remap)?$/.test(f.path))
+  let candidates = stubs.filter((f) => /task|quest/i.test(f.path))
+  if (candidates.length === 0) {
+    candidates = stubs.filter((f) => !/\/(items|assets)\//i.test(f.path)).slice(0, 4000)
+  }
+  const out: GameTaskScan = { tasks: [], checked: 0, propertyNames: [] }
+  const names = new Set<string>()
+  for (const file of candidates) {
+    out.checked++
+    try {
+      const base = file.path.replace(/\.remap$/, '')
+      if (file.path.endsWith('.remap')) {
+        const target = REMAP_PATH.exec((await read(file)).toString('utf8'))?.[1]
+        const tf = target ? byPath.get(norm(target)) : undefined
+        if (!tf) continue
+        const res = parseRsrc(await read(tf))
+        if (!res || !/task/i.test(res.scriptClass)) continue
+        const props: GameTask['props'] = {}
+        for (const [k, v] of res.props) {
+          props[k] = simplify(v)
+          names.add(k)
+        }
+        out.tasks.push({ path: base, scriptClass: res.scriptClass, props })
+      } else {
+        const text = (await read(file)).toString('utf8')
+        const cls = /script_class="([^"]+)"/.exec(text.split('\n', 1)[0])?.[1] ?? ''
+        if (!/task/i.test(cls)) continue
+        const props: GameTask['props'] = {}
+        for (const [k, v] of Object.entries(resourceProps(text))) {
+          props[k] = textValue(v)
+          names.add(k)
+        }
+        out.tasks.push({ path: base, scriptClass: cls, props })
+      }
+    } catch {
+      // unreadable resource: skip
+    }
+  }
+  out.propertyNames = [...names].sort()
+  return out
 }

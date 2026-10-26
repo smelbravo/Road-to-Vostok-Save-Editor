@@ -18,6 +18,10 @@
 - Game files: paths inside `RTV.pck` are normalised (with or without `res://`) so the item scan finds the item resources; when it finds none, Settings shows how many files the archive has and sample paths.
 - Settings: profile and game-file diagnostics are shown above the (long) mod list.
 
+- Gear Storage: items can be dragged between slots and grid cells (in the same bag or another one).
+- Modded item icons: textures imported as lossless/WebP/VRAM-compressed `.ctex` are read, and Settings lists the modded items that still have no icon, grouped by reason.
+- Quests: tasks are read from the game files (so tasks and traders added in Build 2 show up) and the Driver and Hunter traders are supported. Settings shows how many tasks were found and which properties they have.
+
 ### Other
 
 - Backups are kept per slot (`slotN_` prefix) and restoring only offers backups of the slot being edited.
