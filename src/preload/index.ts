@@ -78,6 +78,27 @@ export interface ModScan {
   warnings: string[]
 }
 
+export type SaveSource = { kind: 'live' } | { kind: 'slot'; slot: number }
+
+export interface SlotInfo {
+  slot: number
+  active: boolean
+  occupied: boolean
+  displayName: string
+  lastMap: string
+  lastPlayIso: string
+  dead: boolean
+  profile: string
+}
+
+export interface SourceInfo {
+  source: SaveSource
+  slotsAvailable: boolean
+  activeSlot: number
+  slots: SlotInfo[]
+  dir: string
+}
+
 export interface GameCatalog {
   items: (ModItem & { parsed: boolean })[]
   scanned: number
