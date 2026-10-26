@@ -39,6 +39,9 @@ export async function loadMods(): Promise<void> {
 
 export interface GameCatalogStats {
   found: boolean
+  /** Files in RTV.pck and a few sample paths (to diagnose a scan that finds no items) */
+  totalFiles: number
+  samplePaths: string[]
   scanned: number
   /** Items whose data was read from the resource itself (vs. only their path) */
   parsed: number
@@ -100,6 +103,8 @@ export async function loadGameItems(): Promise<void> {
     registerModItems(fresh, true)
     gameCatalog.value = {
       found: cat.pckPath !== null,
+      totalFiles: cat.totalFiles,
+      samplePaths: cat.samplePaths,
       scanned: cat.scanned,
       parsed,
       checked,
@@ -112,6 +117,8 @@ export async function loadGameItems(): Promise<void> {
   } catch (e) {
     gameCatalog.value = {
       found: false,
+      totalFiles: 0,
+      samplePaths: [],
       scanned: 0,
       parsed: 0,
       checked: 0,

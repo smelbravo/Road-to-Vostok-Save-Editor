@@ -14,6 +14,8 @@
 - Icons of modded items now show up: the editor reads the icon each mod item points at (png/jpg, or an imported `.ctex`) from the mod archive.
 - Icons of vanilla items whose texture changed in Build 2 (e.g. some knives) are resolved from the game files instead of the built-in file names.
 - Gear Storage: slots grow to fit the item inside them, so rifles and pistols no longer overlap neighbouring slots.
+- Gear Storage: slot names are no longer cut off, and stored weapons and plated rigs have **Edit loadout** / **Edit armor** like the inventory (weapons whose attachment options the editor does not know, such as mod guns, still cannot be edited).
+- Game files: paths inside `RTV.pck` are normalised (with or without `res://`) so the item scan finds the item resources; when it finds none, Settings shows how many files the archive has and sample paths.
 - Settings: profile and game-file diagnostics are shown above the (long) mod list.
 
 ### Other

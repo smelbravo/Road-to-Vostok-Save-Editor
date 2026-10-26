@@ -37,6 +37,9 @@ export interface GameItem extends ModItem {
 }
 
 export interface GameCatalogResult {
+  /** Files in the archive and a few of their paths, to diagnose a scan that finds nothing */
+  totalFiles: number
+  samplePaths: string[]
   items: GameItem[]
   scanned: number
   unreadable: number
@@ -397,7 +400,24 @@ export async function scanGameItems(
   files: PckFile[],
   read: (file: PckFile) => Promise<Buffer>
 ): Promise<GameCatalogResult> {
-  const result: GameCatalogResult = { items: [], scanned: 0, unreadable: 0, warnings: [] }
+  // Godot stores paths with or without the `res://` prefix depending on the version
+  const norm = (p: string): string => {
+    const clean = p.replace(/\\/g, '/').replace(/^\/+/, '')
+    return clean.startsWith('res://') ? clean : 'res://' + clean
+  }
+  const rawFiles = files
+  files = files.map((f) => ({ ...f, path: norm(f.path) }))
+  const result: GameCatalogResult = {
+    totalFiles: files.length,
+    samplePaths: [
+      ...rawFiles.filter((f) => /items/i.test(f.path)).slice(0, 3),
+      ...rawFiles.slice(0, 2)
+    ].map((f) => f.path),
+    items: [],
+    scanned: 0,
+    unreadable: 0,
+    warnings: []
+  }
   const byPath = new Map(files.map((f) => [f.path, f]))
   const iconIndex = buildIconIndex(files)
   const seen = new Set<string>()
@@ -412,7 +432,7 @@ export async function scanGameItems(
     try {
       if (file.path.endsWith('.remap')) {
         const target = REMAP_PATH.exec((await read(file)).toString('utf8'))?.[1]
-        const targetFile = target ? byPath.get(target) : undefined
+        const targetFile = target ? byPath.get(norm(target)) : undefined
         if (targetFile) {
           const res = parseRsrc(await read(targetFile))
           if (res) item = itemFromRsrc(res, base)

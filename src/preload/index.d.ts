@@ -112,6 +112,8 @@ declare global {
     /** Items found in the game's own files, in the same shape as mod items */
     items: (ModItem & { parsed: boolean })[]
     /** How many resources the scan looked at and how many could not be read */
+    totalFiles: number
+    samplePaths: string[]
     scanned: number
     unreadable: number
     pckPath: string | null

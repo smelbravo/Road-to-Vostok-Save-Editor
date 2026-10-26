@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import {
   storageContainers,
   storedItemCount,
@@ -15,6 +15,8 @@ import { gseDisabled, gseMod, modScan } from '../composables/useMods'
 import { useToast } from '../composables/useToast'
 import { ITEMS_BY_PATH } from '../data/items'
 import { isBox } from '../data/gse'
+import { WEAPON_ATTACHMENT_LAYOUTS } from '../data/weapon-attachments'
+import type { SlotItem } from '../lib/types'
 import ItemIcon from './ItemIcon.vue'
 import StorageAddDialog from './StorageAddDialog.vue'
 import { Button } from '../components/ui/button'
@@ -25,6 +27,8 @@ import { Plus, Trash2, ArrowDownToLine, TriangleAlert } from 'lucide-vue-next'
 const CELL_UI = 44
 
 const toast = useToast()
+const openWorkbench = inject<(weapon: SlotItem) => void>('openWorkbench')
+const openRigArmorWorkbench = inject<(rig: SlotItem) => void>('openRigArmorWorkbench')
 const selectedId = ref<string | null>(null)
 const dialogOpen = ref(false)
 const dialogHolder = ref<string | null>(null)
@@ -89,6 +93,25 @@ function openAdd(container: StorageContainer, section: StorageSection): void {
 
 function onStored(message: string): void {
   if (message) toast.show(message, 'error')
+}
+
+// Same rules as the inventory: weapons the editor knows attachment options for, and plated rigs.
+const canEditLoadout = computed(() => {
+  const item = selected.value?.entry.item
+  return !!item && item.category === 'Weapons' && WEAPON_ATTACHMENT_LAYOUTS.has(item.itemPath)
+})
+const canEditArmor = computed(() => !!selected.value?.entry.item.carrier)
+const moddedWeapon = computed(() => {
+  const item = selected.value?.entry.item
+  return !!item && item.category === 'Weapons' && !canEditLoadout.value
+})
+
+function editLoadout(): void {
+  if (selected.value && openWorkbench) openWorkbench(selected.value.entry.item)
+}
+
+function editArmor(): void {
+  if (selected.value && openRigArmorWorkbench) openRigArmorWorkbench(selected.value.entry.item)
 }
 
 function toInventory(): void {
@@ -195,10 +218,10 @@ const statusLine = computed(() => {
           <div v-for="section in container.sections" :key="section.spec.key" class="space-y-1">
             <div
               class="flex items-center justify-between gap-2"
-              :style="{ width: `${sectionSize(section).w * CELL_UI}px`, minWidth: `${CELL_UI}px` }"
+              :style="{ minWidth: `${sectionSize(section).w * CELL_UI}px` }"
             >
               <span
-                class="text-[11px] text-muted-foreground truncate"
+                class="text-[11px] text-muted-foreground whitespace-nowrap"
                 :title="`${section.spec.caption} (${section.spec.key}) — ${section.spec.tip}`"
               >
                 {{ section.spec.caption }}
@@ -274,6 +297,10 @@ const statusLine = computed(() => {
           <TriangleAlert class="h-3.5 w-3.5 shrink-0 mt-px" />
           {{ selected.entry.problem }}
         </p>
+        <p v-if="moddedWeapon" class="text-xs text-muted-foreground">
+          The attachments of this weapon cannot be edited here: the editor does not know which
+          attachments fit it (same limit as the inventory loadout editor).
+        </p>
         <div class="flex flex-wrap items-center gap-3">
           <div v-if="selectedFields?.condition" class="flex items-center gap-1.5">
             <label class="text-xs text-muted-foreground">Condition</label>
@@ -298,6 +325,24 @@ const statusLine = computed(() => {
             />
           </div>
           <div class="flex-1" />
+          <Button
+            v-if="canEditLoadout"
+            variant="outline"
+            size="sm"
+            class="h-7 text-xs"
+            @click="editLoadout"
+          >
+            Edit loadout
+          </Button>
+          <Button
+            v-if="canEditArmor"
+            variant="outline"
+            size="sm"
+            class="h-7 text-xs"
+            @click="editArmor"
+          >
+            Edit armor
+          </Button>
           <Button variant="outline" size="sm" class="h-7 text-xs" @click="toInventory">
             <ArrowDownToLine class="h-3.5 w-3.5" />
             To inventory

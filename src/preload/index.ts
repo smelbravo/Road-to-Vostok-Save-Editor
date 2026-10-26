@@ -102,6 +102,8 @@ export interface SourceInfo {
 
 export interface GameCatalog {
   items: (ModItem & { parsed: boolean })[]
+  totalFiles: number
+  samplePaths: string[]
   scanned: number
   unreadable: number
   pckPath: string | null

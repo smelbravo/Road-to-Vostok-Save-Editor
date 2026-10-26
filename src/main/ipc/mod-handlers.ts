@@ -57,6 +57,8 @@ export function registerModHandlers(): void {
   // Items found in the game's own files (RTV.pck). Never throws.
   ipcMain.handle('mods:scan-game', async () => {
     const empty = {
+      totalFiles: 0,
+      samplePaths: [] as string[],
       items: [],
       scanned: 0,
       unreadable: 0,

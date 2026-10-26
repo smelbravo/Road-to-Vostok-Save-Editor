@@ -152,6 +152,10 @@ onMounted(refreshDir)
         <template v-else>
           Game files: {{ gameCatalog.scanned }} item resources read, {{ gameCatalog.added }} not in
           the built-in list added, {{ gameCatalog.iconsFixed }} icon names updated.
+          <template v-if="gameCatalog.scanned === 0">
+            (the game archive has {{ gameCatalog.totalFiles }} files; example paths:
+            {{ gameCatalog.samplePaths.join(', ') }})
+          </template>
           <template v-if="gameCatalog.checked > 0">
             Reader check: {{ gameCatalog.matched }}/{{ gameCatalog.checked }} known items matched{{
               gameCatalog.trusted ? '' : ' (below threshold, only names from file paths are used)'
