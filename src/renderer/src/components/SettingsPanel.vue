@@ -139,16 +139,6 @@ onMounted(refreshDir)
       >
         {{ modScan.modsDir }}
       </p>
-      <ul v-if="installedMods.length > 0" class="text-xs space-y-0.5">
-        <li v-for="mod in installedMods" :key="mod.file" class="flex gap-2">
-          <span class="font-medium">{{ mod.name }}</span>
-          <span class="text-muted-foreground"
-            >{{ mod.id }}{{ mod.version ? ` · v${mod.version}` : ''
-            }}{{ mod.location === 'library' ? ' · Mod Manager library' : '' }}</span
-          >
-          <span v-if="mod.enabled === false" class="text-yellow-400">disabled in profile</span>
-        </li>
-      </ul>
       <p v-if="modScan?.activeProfile" class="text-xs text-muted-foreground">
         Active mod profile: {{ modScan.activeProfile }}
         <template v-if="modScan.profiles.length > 1">
@@ -161,7 +151,7 @@ onMounted(refreshDir)
         >
         <template v-else>
           Game files: {{ gameCatalog.scanned }} item resources read, {{ gameCatalog.added }} not in
-          the built-in list added.
+          the built-in list added, {{ gameCatalog.iconsFixed }} icon names updated.
           <template v-if="gameCatalog.checked > 0">
             Reader check: {{ gameCatalog.matched }}/{{ gameCatalog.checked }} known items matched{{
               gameCatalog.trusted ? '' : ' (below threshold, only names from file paths are used)'
@@ -172,6 +162,16 @@ onMounted(refreshDir)
       <p v-for="w in gameCatalog?.warnings ?? []" :key="w" class="text-xs text-yellow-400">
         {{ w }}
       </p>
+      <ul v-if="installedMods.length > 0" class="text-xs space-y-0.5">
+        <li v-for="mod in installedMods" :key="mod.file" class="flex gap-2">
+          <span class="font-medium">{{ mod.name }}</span>
+          <span class="text-muted-foreground"
+            >{{ mod.id }}{{ mod.version ? ` · v${mod.version}` : ''
+            }}{{ mod.location === 'library' ? ' · Mod Manager library' : '' }}</span
+          >
+          <span v-if="mod.enabled === false" class="text-yellow-400">disabled in profile</span>
+        </li>
+      </ul>
       <p v-for="w in modScan?.warnings ?? []" :key="w" class="text-xs text-yellow-400">{{ w }}</p>
       <p class="text-xs text-muted-foreground">
         Items added by mods get their name, size and category from the mod itself. Anything the

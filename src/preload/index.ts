@@ -66,6 +66,7 @@ export interface ModItem {
   showCondition: boolean
   slots: string[]
   modId: string
+  iconFile?: string
 }
 
 export interface ModScan {

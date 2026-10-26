@@ -44,6 +44,10 @@ export interface ModItem {
   slots: string[]
   /** Id of the mod that ships it (mod.txt id), '' when unknown */
   modId: string
+  /** res:// path of the icon texture the item points at ('' when none) */
+  iconPath?: string
+  /** Icon cache key once the icon was extracted (see ScanOptions.onIcon) */
+  iconFile?: string
 }
 
 export interface ModScan {
@@ -195,6 +199,17 @@ export function parseItemTres(text: string, resourcePath: string, modId: string)
   if (!name || !type) return null
   const size = /^Vector2\(\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/.exec(props.size ?? '')
   const slots = [...(props.slots ?? '').matchAll(/"([^"]+)"/g)].map((m) => m[1])
+  const iconId = /^ExtResource\(\s*"?([^")]+)"?\s*\)$/.exec(props.icon ?? '')?.[1]
+  let iconPath = ''
+  if (iconId) {
+    for (const m of text.matchAll(/^\[ext_resource\s+([^\]]*)\]/gm)) {
+      const attrs = m[1]
+      if (new RegExp(`\\bid="${iconId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`).test(attrs)) {
+        iconPath = /\bpath="([^"]+)"/.exec(attrs)?.[1] ?? ''
+        break
+      }
+    }
+  }
   const file = unquote(props.file) || (resourcePath.split('/').pop() ?? '').replace(/\.tres$/, '')
   const num = (raw: string | undefined): number => {
     const n = Number(raw)
@@ -213,7 +228,8 @@ export function parseItemTres(text: string, resourcePath: string, modId: string)
     maxAmount: num(props.maxAmount),
     showCondition: props.showCondition === 'true',
     slots,
-    modId
+    modId,
+    iconPath
   }
 }
 
@@ -225,9 +241,48 @@ const MOD_EXTENSIONS = new Set(['.vmz', '.zip'])
 const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024
 const MAX_TRES_BYTES = 256 * 1024
 
+/** Receives an icon found inside a mod; returns true when it was stored under `key`. */
+export type IconSink = (key: string, ext: string, data: Buffer) => Promise<boolean>
+
+const safeKey = (s: string): string => s.replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 80)
+
+async function extractItemIcon(
+  buf: Buffer,
+  entries: ZipEntry[],
+  item: ModItem,
+  sink: IconSink
+): Promise<void> {
+  if (!item.iconPath) return
+  const want = item.iconPath.replace(/^res:\/\//, '').toLowerCase()
+  const find = (name: string): ZipEntry | undefined =>
+    entries.find((e) => e.name.toLowerCase() === name)
+  const stem = (item.iconPath.split('/').pop() ?? 'icon').replace(/\.[^.]+$/, '')
+  const key = `mod_${safeKey(item.modId)}_${safeKey(stem)}`
+  const direct = find(want)
+  if (direct && direct.size < 16 * 1024 * 1024) {
+    const ext = want.split('.').pop() ?? ''
+    if (['png', 'jpg', 'jpeg'].includes(ext)) {
+      if (await sink(key, ext, await readZipEntry(buf, direct))) item.iconFile = key
+      return
+    }
+  }
+  // Imported texture: <icon>.import names the .ctex that holds the pixels
+  const imp = find(want + '.import')
+  if (imp) {
+    const target = /^path(?:\.[a-z0-9]+)?\s*=\s*"res:\/\/([^"]+)"/m.exec(
+      (await readZipEntry(buf, imp)).toString('utf8')
+    )?.[1]
+    const ctex = target ? find(target.toLowerCase()) : undefined
+    if (ctex && ctex.size < 16 * 1024 * 1024) {
+      if (await sink(key, 'ctex', await readZipEntry(buf, ctex))) item.iconFile = key
+    }
+  }
+}
+
 export async function scanModArchive(
   file: string,
-  buf: Buffer
+  buf: Buffer,
+  onIcon?: IconSink
 ): Promise<{ mod: InstalledMod; items: ModItem[] }> {
   const entries = listZipEntries(buf)
   const manifest = entries.find((e) => e.name.toLowerCase() === 'mod.txt')
@@ -254,6 +309,15 @@ export async function scanModArchive(
       // one unreadable resource must not hide the rest of the mod
     }
   }
+  if (onIcon) {
+    for (const item of items) {
+      try {
+        await extractItemIcon(buf, entries, item, onIcon)
+      } catch {
+        // a broken icon must not hide the item
+      }
+    }
+  }
   return { mod, items }
 }
 
@@ -263,12 +327,15 @@ export interface ScanOptions {
   userDir: string | null
   /** %APPDATA%/VostokModManager */
   managerDir: string | null
+  /** Stores icons found in mods (the main process writes them to the icon cache) */
+  onIcon?: IconSink
 }
 
 async function scanFolder(
   dir: string,
   location: InstalledMod['location'],
-  result: Omit<ModScan, 'modsDir'>
+  result: Omit<ModScan, 'modsDir'>,
+  onIcon?: IconSink
 ): Promise<void> {
   let names: string[] = []
   try {
@@ -282,7 +349,7 @@ async function scanFolder(
     try {
       const info = await stat(full)
       if (!info.isFile() || info.size > MAX_ARCHIVE_BYTES) continue
-      const { mod, items } = await scanModArchive(name, await readFile(full))
+      const { mod, items } = await scanModArchive(name, await readFile(full), onIcon)
       mod.location = location
       // the same mod can sit in mods/ and mods/Library: keep one entry, prefer mods/
       if (result.mods.some((m) => m.id === mod.id && m.version === mod.version)) continue
@@ -304,8 +371,8 @@ export async function scanMods(opts: ScanOptions): Promise<Omit<ModScan, 'modsDi
     warnings: []
   }
   if (opts.modsDir) {
-    await scanFolder(opts.modsDir, 'mods', result)
-    await scanFolder(join(opts.modsDir, 'Library'), 'library', result)
+    await scanFolder(opts.modsDir, 'mods', result, opts.onIcon)
+    await scanFolder(join(opts.modsDir, 'Library'), 'library', result, opts.onIcon)
   }
 
   const state = await readProfileState(opts.userDir, opts.managerDir)

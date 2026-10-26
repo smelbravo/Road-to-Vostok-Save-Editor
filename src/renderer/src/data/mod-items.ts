@@ -50,6 +50,7 @@ export function registerModItems(found: ModItem[], fromGame = false): void {
       resourcePath: m.resourcePath,
       ...(fromGame ? {} : { modded: true, modId: m.modId })
     }
+    if (m.iconFile) item.iconFile = m.iconFile
     if (m.sizeW > 1) item.sizeW = m.sizeW
     if (m.sizeH > 1) item.sizeH = m.sizeH
     if (m.stackable) item.stackable = true

@@ -199,7 +199,7 @@ function crc32(buf: Buffer, start: number, end: number): number {
   return (crc ^ 0xffffffff) >>> 0
 }
 
-function encodePng(rgba: Uint8Array, width: number, height: number): Buffer {
+export function encodePng(rgba: Uint8Array, width: number, height: number): Buffer {
   // Build raw scanlines with filter byte 0 (None) per row
   const raw = Buffer.alloc(height * (1 + width * 4))
   for (let y = 0; y < height; y++) {
@@ -267,7 +267,7 @@ function encodePng(rgba: Uint8Array, width: number, height: number): Buffer {
 const GST2_HEADER_SIZE = 52
 const FORMAT_DXT5 = 19
 
-function decodeCtex(data: Buffer): { width: number; height: number; rgba: Uint8Array } {
+export function decodeCtex(data: Buffer): { width: number; height: number; rgba: Uint8Array } {
   const magic = data.toString('ascii', 0, 4)
   if (magic !== 'GST2') throw new Error(`Unknown texture magic: ${magic}`)
 
@@ -298,7 +298,7 @@ function extractCacheKey(pckPath: string): string | null {
 // Cache management
 // ---------------------------------------------------------------------------
 
-function getCacheDir(): string {
+export function getCacheDir(): string {
   return join(app.getPath('userData'), 'icon-cache')
 }
 

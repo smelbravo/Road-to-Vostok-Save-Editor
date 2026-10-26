@@ -1,12 +1,32 @@
-import { ipcMain } from 'electron'
+import { ipcMain, nativeImage } from 'electron'
 import { dirname, join } from 'path'
 import { existsSync } from 'fs'
 import { findGamePckPath } from '../game-path'
 import { scanMods, type ModScan } from '../mods'
-import { open } from 'fs/promises'
+import { open, mkdir, writeFile } from 'fs/promises'
 import { getSaveDir } from './save-handlers'
 import { scanGameItems } from '../game-items'
-import { listPckEntries } from '../icon-extractor'
+import { listPckEntries, decodeCtex, encodePng, getCacheDir } from '../icon-extractor'
+
+/** Writes an icon found inside a mod to the icon cache as `<key>.png` (what ItemIcon loads). */
+async function storeModIcon(key: string, ext: string, data: Buffer): Promise<boolean> {
+  try {
+    let png: Buffer
+    if (ext === 'png') png = data
+    else if (ext === 'jpg' || ext === 'jpeg') png = nativeImage.createFromBuffer(data).toPNG()
+    else if (ext === 'ctex') {
+      const d = decodeCtex(data)
+      png = encodePng(d.rgba, d.width, d.height)
+    } else return false
+    if (png.length === 0) return false
+    const dir = getCacheDir()
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, `${key}.png`), png)
+    return true
+  } catch {
+    return false
+  }
+}
 
 export function registerModHandlers(): void {
   // What mods are installed and which items they add. Never throws: a missing game
@@ -30,7 +50,7 @@ export function registerModHandlers(): void {
     }
     const appData = process.env.APPDATA
     const managerDir = appData ? join(appData, 'VostokModManager') : null
-    const scan = await scanMods({ modsDir, userDir, managerDir })
+    const scan = await scanMods({ modsDir, userDir, managerDir, onIcon: storeModIcon })
     return { modsDir, ...scan }
   })
 

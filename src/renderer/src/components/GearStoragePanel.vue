@@ -48,8 +48,19 @@ const selectedFields = computed(() =>
   selected.value ? editableFields(selected.value.entry.item.itemPath) : null
 )
 
+// A slot grows to hold what is in it: a rifle in a one-cell "gun" slot is drawn at its real size
+// and would otherwise spill over the neighbouring slots.
+function sectionSize(section: StorageSection): { w: number; h: number } {
+  let { w, h } = section.spec
+  for (const e of section.entries) {
+    w = Math.max(w, e.col + e.w)
+    h = Math.max(h, e.row + e.h)
+  }
+  return { w, h }
+}
+
 function gridStyle(section: StorageSection): Record<string, string> {
-  const { w, h } = section.spec
+  const { w, h } = sectionSize(section)
   return {
     width: `${w * CELL_UI}px`,
     height: `${h * CELL_UI}px`,
@@ -184,7 +195,7 @@ const statusLine = computed(() => {
           <div v-for="section in container.sections" :key="section.spec.key" class="space-y-1">
             <div
               class="flex items-center justify-between gap-2"
-              :style="{ minWidth: `${CELL_UI}px` }"
+              :style="{ width: `${sectionSize(section).w * CELL_UI}px`, minWidth: `${CELL_UI}px` }"
             >
               <span
                 class="text-[11px] text-muted-foreground truncate"

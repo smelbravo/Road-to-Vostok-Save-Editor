@@ -26,7 +26,7 @@ import {
   scanGameItems,
   type PckFile
 } from '../src/main/game-items'
-import { scanMods } from '../src/main/mods'
+import { scanMods, parseItemTres } from '../src/main/mods'
 
 let failures = 0
 function check(name: string, ok: boolean, detail = ''): void {
@@ -253,6 +253,32 @@ check(
   'pck fallback by path',
   res.items.find((i) => i.id === 'Odd_Thing')?.parsed === false &&
     itemFromPath('res://Items/Misc/Odd_Thing/Odd_Thing.tres')?.displayName === 'Odd Thing'
+)
+
+// icons
+const iconItem = parseItemTres(
+  '[gd_resource type="Resource" script_class="ItemData" format=3]\n\n[ext_resource type="Texture2D" uid="uid://abc" path="res://mods/x/gfx/icon_a.png" id="2_zz"]\n\n[resource]\nname = "A"\ntype = "Misc"\nicon = ExtResource("2_zz")\n',
+  'res://mods/x/A.tres',
+  'x'
+)
+check(
+  'mod icon path',
+  iconItem?.iconPath === 'res://mods/x/gfx/icon_a.png',
+  String(iconItem?.iconPath)
+)
+const iconFiles: PckFile[] = [
+  {
+    path: 'res://.godot/imported/Icon_Machete.png-0123456789abcdef0123456789abcdef.s3tc.ctex',
+    offset: 0,
+    size: 1
+  },
+  { path: 'res://Items/Knives/Machete/Machete.tres', offset: 0, size: 1 }
+]
+const r2 = await scanGameItems(iconFiles, async () => Buffer.from('x'))
+check(
+  'game icon by id guess',
+  r2.items[0]?.iconFile === 'Icon_Machete.png-0123456789abcdef0123456789abcdef.s3tc.ctex',
+  JSON.stringify(r2.items[0])
 )
 
 console.log(failures === 0 ? '\nall passed' : `\n${failures} failed`)

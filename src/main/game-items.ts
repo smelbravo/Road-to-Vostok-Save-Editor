@@ -20,6 +20,17 @@ export interface PckFile {
   size: number
 }
 
+/** `Icon_AK-12.png` -> full imported name `Icon_AK-12.png-<hash>.s3tc.ctex` (the icon cache key). */
+export function buildIconIndex(files: PckFile[]): Map<string, string> {
+  const index = new Map<string, string>()
+  for (const f of files) {
+    const name = f.path.split('/').pop() ?? ''
+    const m = /^(.+)-[0-9a-f]{32}\.s3tc\.ctex$/.exec(name)
+    if (m && name.startsWith('Icon_')) index.set(m[1].toLowerCase(), name)
+  }
+  return index
+}
+
 export interface GameItem extends ModItem {
   /** true when name/size/etc. were read from the resource, false when derived from the path */
   parsed: boolean
@@ -309,6 +320,15 @@ const TYPE_TO_CATEGORY: Record<string, string> = {
   Weapon: 'Weapons'
 }
 
+function resolveIcon(
+  index: Map<string, string>,
+  iconPath: string | undefined,
+  id: string
+): string | undefined {
+  const base = iconPath?.split('/').pop()?.toLowerCase()
+  return (base ? index.get(base) : undefined) ?? index.get(`icon_${id}.png`.toLowerCase())
+}
+
 const asString = (v: RsrcValue | undefined): string => (typeof v === 'string' ? v : '')
 const asNumber = (v: RsrcValue | undefined): number => (typeof v === 'number' ? v : 0)
 
@@ -340,6 +360,10 @@ export function itemFromRsrc(res: RsrcResource, resourcePath: string): GameItem 
       ? (slots as RsrcValue[]).filter((s): s is string => typeof s === 'string')
       : [],
     modId: '',
+    iconPath: ((): string => {
+      const icon = res.props.get('icon')
+      return typeof icon === 'object' && icon !== null && !Array.isArray(icon) ? icon.ref : ''
+    })(),
     parsed: true
   }
 }
@@ -375,6 +399,7 @@ export async function scanGameItems(
 ): Promise<GameCatalogResult> {
   const result: GameCatalogResult = { items: [], scanned: 0, unreadable: 0, warnings: [] }
   const byPath = new Map(files.map((f) => [f.path, f]))
+  const iconIndex = buildIconIndex(files)
   const seen = new Set<string>()
 
   for (const file of files) {
@@ -401,9 +426,12 @@ export async function scanGameItems(
     }
     // not an ItemData (or unreadable): keep the path-derived entry so the item is at least listed
     const fallback = itemFromPath(base)
-    if (item) result.items.push(item)
-    else if (fallback) {
+    if (item) {
+      item.iconFile = resolveIcon(iconIndex, item.iconPath, item.id)
+      result.items.push(item)
+    } else if (fallback) {
       result.unreadable++
+      fallback.iconFile = resolveIcon(iconIndex, undefined, fallback.id)
       result.items.push(fallback)
     } else if (failed) result.unreadable++
   }

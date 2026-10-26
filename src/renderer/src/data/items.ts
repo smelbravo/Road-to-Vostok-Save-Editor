@@ -1412,7 +1412,13 @@ export const ITEMS = [
     iconFile: 'Icon_Casette_Player.png-c3e6f03e451e324bdaae9d8cd08f612c.s3tc.ctex',
     showCondition: true,
     slots: ['Player'],
-    compatible: ['res://Items/Electronics/Batteries/Batteries.tres', 'res://Items/Electronics/Casette_Electrofolk/Casette_Electrofolk.tres', 'res://Items/Electronics/Casette_Symphony/Casette_Symphony.tres', 'res://Items/Electronics/Casette_OST/Casette_OST.tres', 'res://Items/Electronics/Casette_Radio/Casette_Radio.tres']
+    compatible: [
+      'res://Items/Electronics/Batteries/Batteries.tres',
+      'res://Items/Electronics/Casette_Electrofolk/Casette_Electrofolk.tres',
+      'res://Items/Electronics/Casette_Symphony/Casette_Symphony.tres',
+      'res://Items/Electronics/Casette_OST/Casette_OST.tres',
+      'res://Items/Electronics/Casette_Radio/Casette_Radio.tres'
+    ]
   },
   {
     category: 'Electronics',
@@ -2540,7 +2546,13 @@ export const ITEMS = [
     sizeH: 3,
     iconFile: 'Icon_K19.png-1b3ef164b2bb5e574270863cac9387da.s3tc.ctex',
     slots: ['Rig'],
-    compatible: ['res://Items/Armor/Armor_Plate_II.tres', 'res://Items/Armor/Armor_Plate_IIIA.tres', 'res://Items/Armor/Armor_Plate_III.tres', 'res://Items/Armor/Armor_Plate_III+.tres', 'res://Items/Armor/Armor_Plate_IV.tres'],
+    compatible: [
+      'res://Items/Armor/Armor_Plate_II.tres',
+      'res://Items/Armor/Armor_Plate_IIIA.tres',
+      'res://Items/Armor/Armor_Plate_III.tres',
+      'res://Items/Armor/Armor_Plate_III+.tres',
+      'res://Items/Armor/Armor_Plate_IV.tres'
+    ],
     carrier: true
   },
   {
@@ -2553,7 +2565,13 @@ export const ITEMS = [
     sizeH: 3,
     iconFile: 'Icon_LVPC_Green.png-66ac4a5a9f4f8ba78ec884e9ddc9e60e.s3tc.ctex',
     slots: ['Rig'],
-    compatible: ['res://Items/Armor/Armor_Plate_II.tres', 'res://Items/Armor/Armor_Plate_IIIA.tres', 'res://Items/Armor/Armor_Plate_III.tres', 'res://Items/Armor/Armor_Plate_III+.tres', 'res://Items/Armor/Armor_Plate_IV.tres'],
+    compatible: [
+      'res://Items/Armor/Armor_Plate_II.tres',
+      'res://Items/Armor/Armor_Plate_IIIA.tres',
+      'res://Items/Armor/Armor_Plate_III.tres',
+      'res://Items/Armor/Armor_Plate_III+.tres',
+      'res://Items/Armor/Armor_Plate_IV.tres'
+    ],
     carrier: true
   },
   {
@@ -2566,7 +2584,13 @@ export const ITEMS = [
     sizeH: 3,
     iconFile: 'Icon_LVPC_M05.png-dd28b4ec476a3f4d2e694a81420f108b.s3tc.ctex',
     slots: ['Rig'],
-    compatible: ['res://Items/Armor/Armor_Plate_II.tres', 'res://Items/Armor/Armor_Plate_IIIA.tres', 'res://Items/Armor/Armor_Plate_III.tres', 'res://Items/Armor/Armor_Plate_III+.tres', 'res://Items/Armor/Armor_Plate_IV.tres'],
+    compatible: [
+      'res://Items/Armor/Armor_Plate_II.tres',
+      'res://Items/Armor/Armor_Plate_IIIA.tres',
+      'res://Items/Armor/Armor_Plate_III.tres',
+      'res://Items/Armor/Armor_Plate_III+.tres',
+      'res://Items/Armor/Armor_Plate_IV.tres'
+    ],
     carrier: true
   },
   {
@@ -2579,7 +2603,13 @@ export const ITEMS = [
     sizeH: 3,
     iconFile: 'Icon_LVPC_Winter.png-1bd29dba8d05bb46b9266bbe2f57607c.s3tc.ctex',
     slots: ['Rig'],
-    compatible: ['res://Items/Armor/Armor_Plate_II.tres', 'res://Items/Armor/Armor_Plate_IIIA.tres', 'res://Items/Armor/Armor_Plate_III.tres', 'res://Items/Armor/Armor_Plate_III+.tres', 'res://Items/Armor/Armor_Plate_IV.tres'],
+    compatible: [
+      'res://Items/Armor/Armor_Plate_II.tres',
+      'res://Items/Armor/Armor_Plate_IIIA.tres',
+      'res://Items/Armor/Armor_Plate_III.tres',
+      'res://Items/Armor/Armor_Plate_III+.tres',
+      'res://Items/Armor/Armor_Plate_IV.tres'
+    ],
     carrier: true
   },
   {
@@ -2593,7 +2623,10 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary', 'Secondary'],
-    compatible: ['res://Items/Weapons/Colt_1911/Colt_1911_Magazine.tres', 'res://Items/Attachments/Rider/Rider.tres']
+    compatible: [
+      'res://Items/Weapons/Colt_1911/Colt_1911_Magazine.tres',
+      'res://Items/Attachments/Rider/Rider.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2606,7 +2639,12 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary', 'Secondary'],
-    compatible: ['res://Items/Weapons/Glock_17/Glock_17_Magazine.tres', 'res://Items/Attachments/Rider/Rider.tres', 'res://Items/Attachments/RMR/RMR.tres', 'res://Items/Attachments/SRO/SRO.tres']
+    compatible: [
+      'res://Items/Weapons/Glock_17/Glock_17_Magazine.tres',
+      'res://Items/Attachments/Rider/Rider.tres',
+      'res://Items/Attachments/RMR/RMR.tres',
+      'res://Items/Attachments/SRO/SRO.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2619,7 +2657,24 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/M4A1/STANAG_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/Monster/Monster.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/OZ5/OZ5.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/SOCOM/SOCOM.tres', 'res://Items/Attachments/Thor/Thor.tres', 'res://Items/Attachments/Vudu/Vudu.tres', 'res://Items/Attachments/ANPEQ/ANPEQ.tres']
+    compatible: [
+      'res://Items/Weapons/M4A1/STANAG_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/Monster/Monster.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/OZ5/OZ5.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/SOCOM/SOCOM.tres',
+      'res://Items/Attachments/Thor/Thor.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres',
+      'res://Items/Attachments/ANPEQ/ANPEQ.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2632,7 +2687,22 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/AK-12/AK-12_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/OZ5/OZ5.tres', 'res://Items/Attachments/PBS/PBS.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/PTN/PTN.tres', 'res://Items/Attachments/Vudu/Vudu.tres', 'res://Items/Attachments/ANPEQ/ANPEQ.tres']
+    compatible: [
+      'res://Items/Weapons/AK-12/AK-12_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/OZ5/OZ5.tres',
+      'res://Items/Attachments/PBS/PBS.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/PTN/PTN.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres',
+      'res://Items/Attachments/ANPEQ/ANPEQ.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2645,7 +2715,20 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/AKM/AKM_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/PBS/PBS.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/PTN/PTN.tres', 'res://Items/Attachments/Vudu/Vudu.tres']
+    compatible: [
+      'res://Items/Weapons/AKM/AKM_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/PBS/PBS.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/PTN/PTN.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2658,7 +2741,24 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/KAR-21/KAR-21_223_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/Monster/Monster.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/OZ5/OZ5.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/SOCOM/SOCOM.tres', 'res://Items/Attachments/Thor/Thor.tres', 'res://Items/Attachments/Vudu/Vudu.tres', 'res://Items/Attachments/ANPEQ/ANPEQ.tres']
+    compatible: [
+      'res://Items/Weapons/KAR-21/KAR-21_223_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/Monster/Monster.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/OZ5/OZ5.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/SOCOM/SOCOM.tres',
+      'res://Items/Attachments/Thor/Thor.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres',
+      'res://Items/Attachments/ANPEQ/ANPEQ.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2671,7 +2771,24 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/KAR-21/KAR-21_308_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/Monster/Monster.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/OZ5/OZ5.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/SOCOM/SOCOM.tres', 'res://Items/Attachments/Thor/Thor.tres', 'res://Items/Attachments/Vudu/Vudu.tres', 'res://Items/Attachments/ANPEQ/ANPEQ.tres']
+    compatible: [
+      'res://Items/Weapons/KAR-21/KAR-21_308_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/Monster/Monster.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/OZ5/OZ5.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/SOCOM/SOCOM.tres',
+      'res://Items/Attachments/Thor/Thor.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres',
+      'res://Items/Attachments/ANPEQ/ANPEQ.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2697,7 +2814,20 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/AKS-74U/AKS-74U_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/PBS/PBS.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/PTN/PTN.tres', 'res://Items/Attachments/Vudu/Vudu.tres']
+    compatible: [
+      'res://Items/Weapons/AKS-74U/AKS-74U_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/PBS/PBS.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/PTN/PTN.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2710,7 +2840,24 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/M4A1/STANAG_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/Monster/Monster.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/OZ5/OZ5.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/SOCOM/SOCOM.tres', 'res://Items/Attachments/Thor/Thor.tres', 'res://Items/Attachments/Vudu/Vudu.tres', 'res://Items/Attachments/ANPEQ/ANPEQ.tres']
+    compatible: [
+      'res://Items/Weapons/M4A1/STANAG_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/Monster/Monster.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/OZ5/OZ5.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/SOCOM/SOCOM.tres',
+      'res://Items/Attachments/Thor/Thor.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres',
+      'res://Items/Attachments/ANPEQ/ANPEQ.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2736,7 +2883,24 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/M4A1/STANAG_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/Monster/Monster.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/OZ5/OZ5.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/SOCOM/SOCOM.tres', 'res://Items/Attachments/Thor/Thor.tres', 'res://Items/Attachments/Vudu/Vudu.tres', 'res://Items/Attachments/ANPEQ/ANPEQ.tres']
+    compatible: [
+      'res://Items/Weapons/M4A1/STANAG_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/Monster/Monster.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/OZ5/OZ5.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/SOCOM/SOCOM.tres',
+      'res://Items/Attachments/Thor/Thor.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres',
+      'res://Items/Attachments/ANPEQ/ANPEQ.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2749,7 +2913,22 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/M78/M78_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/Monster/Monster.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/SOCOM/SOCOM.tres', 'res://Items/Attachments/Thor/Thor.tres', 'res://Items/Attachments/Vudu/Vudu.tres']
+    compatible: [
+      'res://Items/Weapons/M78/M78_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/Monster/Monster.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/SOCOM/SOCOM.tres',
+      'res://Items/Attachments/Thor/Thor.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2776,7 +2955,12 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary', 'Secondary'],
-    compatible: ['res://Items/Weapons/P320/P320_Magazine.tres', 'res://Items/Attachments/Rider/Rider.tres', 'res://Items/Attachments/RMR/RMR.tres', 'res://Items/Attachments/SRO/SRO.tres']
+    compatible: [
+      'res://Items/Weapons/P320/P320_Magazine.tres',
+      'res://Items/Attachments/Rider/Rider.tres',
+      'res://Items/Attachments/RMR/RMR.tres',
+      'res://Items/Attachments/SRO/SRO.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2789,7 +2973,20 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary', 'Secondary'],
-    compatible: ['res://Items/Weapons/MP5/MP5_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/Navy/Navy.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/Vudu/Vudu.tres']
+    compatible: [
+      'res://Items/Weapons/MP5/MP5_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/Navy/Navy.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2802,7 +2999,20 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary', 'Secondary'],
-    compatible: ['res://Items/Weapons/MP5/MP5_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/Navy/Navy.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/Vudu/Vudu.tres']
+    compatible: [
+      'res://Items/Weapons/MP5/MP5_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/Navy/Navy.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2815,7 +3025,19 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary', 'Secondary'],
-    compatible: ['res://Items/Weapons/MP5/MP5_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/OZ5/OZ5.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/Vudu/Vudu.tres']
+    compatible: [
+      'res://Items/Weapons/MP5/MP5_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/OZ5/OZ5.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2828,7 +3050,21 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary', 'Secondary'],
-    compatible: ['res://Items/Weapons/MP7/MP7_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/OZ5/OZ5.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/Vudu/Vudu.tres', 'res://Items/Attachments/ANPEQ/ANPEQ.tres']
+    compatible: [
+      'res://Items/Weapons/MP7/MP7_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/OZ5/OZ5.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres',
+      'res://Items/Attachments/ANPEQ/ANPEQ.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2841,7 +3077,22 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/RK-62/RK_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/Monster/Monster.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/SOCOM/SOCOM.tres', 'res://Items/Attachments/Thor/Thor.tres', 'res://Items/Attachments/Vudu/Vudu.tres']
+    compatible: [
+      'res://Items/Weapons/RK-62/RK_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/Monster/Monster.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/SOCOM/SOCOM.tres',
+      'res://Items/Attachments/Thor/Thor.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2854,7 +3105,24 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/RK-62/RK_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/Monster/Monster.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/OZ5/OZ5.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/SOCOM/SOCOM.tres', 'res://Items/Attachments/Thor/Thor.tres', 'res://Items/Attachments/Vudu/Vudu.tres', 'res://Items/Attachments/ANPEQ/ANPEQ.tres']
+    compatible: [
+      'res://Items/Weapons/RK-62/RK_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/Monster/Monster.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/OZ5/OZ5.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/SOCOM/SOCOM.tres',
+      'res://Items/Attachments/Thor/Thor.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres',
+      'res://Items/Attachments/ANPEQ/ANPEQ.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2867,7 +3135,22 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/RK-62/RK_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Hybrid/Hybrid.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/Monster/Monster.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/SOCOM/SOCOM.tres', 'res://Items/Attachments/Thor/Thor.tres', 'res://Items/Attachments/Vudu/Vudu.tres']
+    compatible: [
+      'res://Items/Weapons/RK-62/RK_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Hybrid/Hybrid.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/Monster/Monster.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/SOCOM/SOCOM.tres',
+      'res://Items/Attachments/Thor/Thor.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2894,7 +3177,19 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/VSS/VSS_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/POSP/POSP.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/Vudu/Vudu.tres']
+    compatible: [
+      'res://Items/Weapons/VSS/VSS_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/POSP/POSP.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres'
+    ]
   },
   {
     category: 'Weapons',
@@ -2907,7 +3202,21 @@ export const ITEMS = [
     showCondition: true,
     repairs: true,
     slots: ['Primary'],
-    compatible: ['res://Items/Weapons/SVD/SVD_Magazine.tres', 'res://Items/Attachments/ACOG/ACOG.tres', 'res://Items/Attachments/EXPS/EXPS.tres', 'res://Items/Attachments/HMR/HMR.tres', 'res://Items/Attachments/Kobra/Kobra.tres', 'res://Items/Attachments/Leopard/Leopard.tres', 'res://Items/Attachments/Micro/Micro.tres', 'res://Items/Attachments/MRO/MRO.tres', 'res://Items/Attachments/PBS/PBS.tres', 'res://Items/Attachments/POSP/POSP.tres', 'res://Items/Attachments/PRO/PRO.tres', 'res://Items/Attachments/PTN/PTN.tres', 'res://Items/Attachments/Vudu/Vudu.tres']
+    compatible: [
+      'res://Items/Weapons/SVD/SVD_Magazine.tres',
+      'res://Items/Attachments/ACOG/ACOG.tres',
+      'res://Items/Attachments/EXPS/EXPS.tres',
+      'res://Items/Attachments/HMR/HMR.tres',
+      'res://Items/Attachments/Kobra/Kobra.tres',
+      'res://Items/Attachments/Leopard/Leopard.tres',
+      'res://Items/Attachments/Micro/Micro.tres',
+      'res://Items/Attachments/MRO/MRO.tres',
+      'res://Items/Attachments/PBS/PBS.tres',
+      'res://Items/Attachments/POSP/POSP.tres',
+      'res://Items/Attachments/PRO/PRO.tres',
+      'res://Items/Attachments/PTN/PTN.tres',
+      'res://Items/Attachments/Vudu/Vudu.tres'
+    ]
   }
 ] satisfies GameItem[]
 

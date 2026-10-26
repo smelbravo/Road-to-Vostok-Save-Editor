@@ -49,6 +49,8 @@ export interface GameCatalogStats {
   added: number
   /** The reader agreed with the built-in catalog, so its data is used */
   trusted: boolean
+  /** Built-in items whose icon file name was updated from the game files */
+  iconsFixed: number
   warnings: string[]
 }
 
@@ -76,6 +78,16 @@ export async function loadGameItems(): Promise<void> {
         matched++
       }
     }
+    // Build 2 re-imported some textures, which changes the hash in the icon file name. The
+    // game files are the truth, so existing entries get the icon file the game really has.
+    let iconsFixed = 0
+    for (const it of cat.items) {
+      const known = ITEMS_BY_PATH.get(it.resourcePath)
+      if (known && it.iconFile && known.iconFile !== it.iconFile) {
+        known.iconFile = it.iconFile
+        iconsFixed++
+      }
+    }
     const parsed = cat.items.filter((i) => i.parsed).length
     const trusted = parsed === 0 || (checked >= 5 && matched / checked >= 0.9)
     const fresh = cat.items
@@ -94,6 +106,7 @@ export async function loadGameItems(): Promise<void> {
       matched,
       added: fresh.length,
       trusted,
+      iconsFixed,
       warnings: cat.warnings
     }
   } catch (e) {
@@ -105,6 +118,7 @@ export async function loadGameItems(): Promise<void> {
       matched: 0,
       added: 0,
       trusted: false,
+      iconsFixed: 0,
       warnings: [e instanceof Error ? e.message : 'Could not read the game files']
     }
   }

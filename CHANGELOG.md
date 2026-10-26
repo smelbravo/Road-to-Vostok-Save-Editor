@@ -9,6 +9,13 @@
 - **RTV Mod Manager**: mods in `mods/Library` are found too.
 - **Items from the game files**: the editor now reads item resources from `RTV.pck`, so items added by game updates show up without a new editor release. The reader is checked against the built-in catalog at startup; if it does not agree, only names derived from the file paths are used. Modded items from `.vmz` archives keep working as before.
 
+### Fixes
+
+- Icons of modded items now show up: the editor reads the icon each mod item points at (png/jpg, or an imported `.ctex`) from the mod archive.
+- Icons of vanilla items whose texture changed in Build 2 (e.g. some knives) are resolved from the game files instead of the built-in file names.
+- Gear Storage: slots grow to fit the item inside them, so rifles and pistols no longer overlap neighbouring slots.
+- Settings: profile and game-file diagnostics are shown above the (long) mod list.
+
 ### Other
 
 - Backups are kept per slot (`slotN_` prefix) and restoring only offers backups of the slot being edited.

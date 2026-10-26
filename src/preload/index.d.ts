@@ -70,6 +70,8 @@ declare global {
     showCondition: boolean
     slots: string[]
     modId: string
+    /** Icon cache key (extracted from the mod or the game files) */
+    iconFile?: string
   }
 
   interface ModScan {
