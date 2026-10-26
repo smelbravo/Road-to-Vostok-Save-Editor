@@ -1,6 +1,6 @@
 {
   "name": "road-to-vostok-save-editor",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Desktop save file editor for Road to Vostok",
   "main": "./out/main/index.js",
   "author": "FINDarkside (original), smelbravo (Build 2 update)",

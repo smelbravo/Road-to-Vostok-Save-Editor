@@ -23,7 +23,8 @@ import {
   tradersLoadError
 } from './saveEditorState'
 import { loadSafehouses, saveSafehouseChanges } from './useSafehouses'
-import { loadMods } from './useMods'
+import { loadMods, loadGameItems } from './useMods'
+import { refreshSourceInfo } from './useSaveSource'
 
 export async function init(): Promise<void> {
   isLoading.value = true
@@ -32,7 +33,8 @@ export async function init(): Promise<void> {
   tradersLoadError.value = null
 
   // Mods first: their items must be known before the save is projected into the UI.
-  await loadMods()
+  await refreshSourceInfo()
+  await Promise.all([loadMods(), loadGameItems()])
 
   try {
     const content = await window.api.loadSave('Character.tres')

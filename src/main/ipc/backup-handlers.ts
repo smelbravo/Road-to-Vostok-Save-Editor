@@ -2,6 +2,7 @@ import { ipcMain, shell } from 'electron'
 import { readdir, mkdir, copyFile, rm, stat } from 'fs/promises'
 import { join } from 'path'
 import { getSaveDir } from './save-handlers'
+import { copyIntoSource, readDir, removeFromSource, sourceTag } from '../save-source'
 
 const BACKUP_DIR_NAME = 'save-editor-backups'
 const MAX_BACKUPS = 20
@@ -29,11 +30,20 @@ function formatTimestamp(date: Date) {
   ].join('-')
 }
 
+/** Backups of the current source only: slot backups are prefixed `slotN_`, live ones are not. */
+function belongsToSource(name: string) {
+  const tag = sourceTag()
+  return tag ? name.startsWith(tag) : !/^slot\d+_/.test(name)
+}
+
 async function getBackupFolders() {
   const backupDir = getBackupDir()
   try {
     const entries = await readdir(backupDir, { withFileTypes: true })
-    return entries.filter((e) => e.isDirectory()).map((e) => e.name)
+    return entries
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .filter(belongsToSource)
   } catch {
     return []
   }
@@ -41,7 +51,7 @@ async function getBackupFolders() {
 
 export async function createBackup(): Promise<void> {
   const backupDir = getBackupDir()
-  const saveDir = getSaveDir()
+  const saveDir = await readDir()
 
   // Backup all .tres files together
   const allFiles = await readdir(saveDir)
@@ -49,12 +59,13 @@ export async function createBackup(): Promise<void> {
   if (tresFiles.length === 0) return
 
   // Generate folder name, handle same-second collisions
-  let folderName = formatTimestamp(new Date())
+  const tag = sourceTag()
+  let folderName = tag + formatTimestamp(new Date())
   let targetDir = join(backupDir, folderName)
   let counter = 2
   const existing = new Set(await getBackupFolders())
   while (existing.has(folderName)) {
-    folderName = `${formatTimestamp(new Date())}-${counter}`
+    folderName = `${tag}${formatTimestamp(new Date())}-${counter}`
     targetDir = join(backupDir, folderName)
     counter++
   }
@@ -113,21 +124,21 @@ export function registerBackupHandlers(): void {
 
     const backupDir = getBackupDir()
     const folderPath = join(backupDir, folderName)
-    const files = await readdir(folderPath)
-    const saveDir = getSaveDir()
+    if (!belongsToSource(folderName)) throw new Error('Backup belongs to another save source')
+    const files = (await readdir(folderPath)).filter((f) => f.endsWith('.tres'))
 
     // Backup current save files before overwriting them
     await createBackup()
 
     for (const file of files) {
-      await copyFile(join(folderPath, file), join(saveDir, file))
+      await copyIntoSource(join(folderPath, file), file)
     }
 
     // Safehouse unlocks are represented by file existence. Remove any managed
     // safehouse that did not exist in the restored snapshot.
     const backupFiles = new Set(files)
     for (const file of MANAGED_SAFEHOUSE_FILES) {
-      if (!backupFiles.has(file)) await rm(join(saveDir, file), { force: true })
+      if (!backupFiles.has(file)) await removeFromSource(file)
     }
   })
 

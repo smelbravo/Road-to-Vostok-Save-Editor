@@ -11,7 +11,7 @@ import {
   type StorageSection,
   type StoredEntry
 } from '../composables/useGearStorage'
-import { gseMod, modScan } from '../composables/useMods'
+import { gseDisabled, gseMod, modScan } from '../composables/useMods'
 import { useToast } from '../composables/useToast'
 import { ITEMS_BY_PATH } from '../data/items'
 import { isBox } from '../data/gse'
@@ -110,6 +110,13 @@ function setAmount(value: string | number): void {
 const statusLine = computed(() => {
   if (gseMod.value) {
     const v = gseMod.value.version ? ` v${gseMod.value.version}` : ''
+    if (gseDisabled.value) {
+      const profile = modScan.value?.activeProfile
+      return {
+        ok: false,
+        text: `Gear Storage Expansion${v} is installed but disabled in the ${profile ? `"${profile}" ` : ''}profile, so the game will not use it`
+      }
+    }
     return { ok: true, text: `Gear Storage Expansion${v} found in your mods folder` }
   }
   if (storedItemCount.value > 0) {

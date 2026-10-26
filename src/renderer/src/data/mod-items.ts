@@ -38,8 +38,8 @@ const CATEGORIES: ReadonlySet<string> = new Set<ItemCategory>([
   'Weapons'
 ])
 
-/** Registers scanned mod items. Items already known by path (vanilla or earlier scan) are skipped. */
-export function registerModItems(found: ModItem[]): void {
+/** Registers scanned mod items (or, with `fromGame`, items found in the game's own files). Items already known by path (vanilla or earlier scan) are skipped. */
+export function registerModItems(found: ModItem[], fromGame = false): void {
   const added: GameItem[] = []
   for (const m of found) {
     if (ITEMS_BY_PATH.has(m.resourcePath)) continue
@@ -48,8 +48,7 @@ export function registerModItems(found: ModItem[]): void {
       id: m.id,
       displayName: m.displayName,
       resourcePath: m.resourcePath,
-      modded: true,
-      modId: m.modId
+      ...(fromGame ? {} : { modded: true, modId: m.modId })
     }
     if (m.sizeW > 1) item.sizeW = m.sizeW
     if (m.sizeH > 1) item.sizeH = m.sizeH

@@ -13,8 +13,14 @@ const api = {
   getSaveDir: (): Promise<string> => ipcRenderer.invoke('saves:get-dir'),
   openSaveDir: (): Promise<void> => ipcRenderer.invoke('saves:open-dir'),
 
-  // Installed mods (Gear Storage Expansion, item mods, ...)
+  // Save-slot mods (Save Slots / Multi Save Slots Reborn)
+  getSourceInfo: (): Promise<SourceInfo> => ipcRenderer.invoke('saves:source-info'),
+  setSaveSource: (source: SaveSource): Promise<SourceInfo> =>
+    ipcRenderer.invoke('saves:set-source', source),
+
+  // Installed mods (Gear Storage Expansion, item mods, ...) and the game's own items
   scanMods: (): Promise<ModScan> => ipcRenderer.invoke('mods:scan'),
+  scanGameItems: (): Promise<GameCatalog> => ipcRenderer.invoke('mods:scan-game'),
 
   // Backups
   listBackups: (): Promise<BackupEntry[]> => ipcRenderer.invoke('backups:list'),
@@ -42,6 +48,8 @@ export interface InstalledMod {
   name: string
   version: string
   author: string
+  location: 'mods' | 'library'
+  enabled: boolean | null
 }
 
 export interface ModItem {
@@ -65,6 +73,16 @@ export interface ModScan {
   mods: InstalledMod[]
   items: ModItem[]
   gseSettingsIni: string | null
+  activeProfile: string
+  profiles: string[]
+  warnings: string[]
+}
+
+export interface GameCatalog {
+  items: (ModItem & { parsed: boolean })[]
+  scanned: number
+  unreadable: number
+  pckPath: string | null
   warnings: string[]
 }
 

@@ -23,8 +23,13 @@ interface SaveApi {
   getSaveDir(): Promise<string>
   openSaveDir(): Promise<void>
 
+  // Save-slot mods (Save Slots / Multi Save Slots Reborn)
+  getSourceInfo(): Promise<SourceInfo>
+  setSaveSource(source: SaveSource): Promise<SourceInfo>
+
   // Installed mods
   scanMods(): Promise<ModScan>
+  scanGameItems(): Promise<GameCatalog>
 
   // Backups
   listBackups(): Promise<BackupEntry[]>
@@ -45,6 +50,10 @@ declare global {
     name: string
     version: string
     author: string
+    /** Lives in mods/ or in RTV Mod Manager's mods/Library */
+    location: 'mods' | 'library'
+    /** Enabled in the active profile; null when no profile mentions it */
+    enabled: boolean | null
   }
 
   interface ModItem {
@@ -69,6 +78,41 @@ declare global {
     items: ModItem[]
     /** Text of the newest user://MCM/GSE/*.ini, when Gear Storage Expansion saved settings */
     gseSettingsIni: string | null
+    /** Active Metro Mod Loader / RTV Mod Manager profile ('' when none) and every known profile */
+    activeProfile: string
+    profiles: string[]
+    warnings: string[]
+  }
+
+  type SaveSource = { kind: 'live' } | { kind: 'slot'; slot: number }
+
+  interface SlotInfo {
+    slot: number
+    active: boolean
+    occupied: boolean
+    displayName: string
+    lastMap: string
+    lastPlayIso: string
+    dead: boolean
+    profile: string
+  }
+
+  interface SourceInfo {
+    source: SaveSource
+    slotsAvailable: boolean
+    activeSlot: number
+    slots: SlotInfo[]
+    /** Folder the editor currently reads from */
+    dir: string
+  }
+
+  interface GameCatalog {
+    /** Items found in the game's own files, in the same shape as mod items */
+    items: (ModItem & { parsed: boolean })[]
+    /** How many resources the scan looked at and how many could not be read */
+    scanned: number
+    unreadable: number
+    pckPath: string | null
     warnings: string[]
   }
 

@@ -22,7 +22,7 @@ export type IconStatus =
   | { status: 'error'; error: string }
   | { status: 'not-found' }
 
-interface PckEntry {
+export interface PckEntry {
   path: string
   offset: number
   size: number
@@ -32,7 +32,7 @@ interface PckEntry {
 // PCK directory parsing
 // ---------------------------------------------------------------------------
 
-async function readPckDirectory(fh: FileHandle, fileBase: number): Promise<PckEntry[]> {
+export async function readPckDirectory(fh: FileHandle, fileBase: number): Promise<PckEntry[]> {
   const headerBuf = Buffer.alloc(40)
   await fh.read(headerBuf, 0, 40, 0)
 
@@ -73,6 +73,18 @@ async function readPckDirectory(fh: FileHandle, fileBase: number): Promise<PckEn
   }
 
   return entries
+}
+
+/** Opens a PCK and lists every file in it (offsets already include the file base). */
+export async function listPckEntries(pckPath: string): Promise<PckEntry[]> {
+  const fh = await open(pckPath, 'r')
+  try {
+    const baseBuf = Buffer.alloc(8)
+    await fh.read(baseBuf, 0, 8, 24)
+    return await readPckDirectory(fh, Number(baseBuf.readBigUInt64LE(0)))
+  } finally {
+    await fh.close()
+  }
 }
 
 // ---------------------------------------------------------------------------

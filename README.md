@@ -9,6 +9,9 @@ A desktop save file editor for [Road to Vostok](https://store.steampowered.com/a
 ## What is new in this version
 
 - Build 2 save files.
+- **Save slots**: works with Save Slots and Multi Save Slots Reborn (choose the slot in Settings).
+- **Mod profiles**: understands Metro Mod Loader and RTV Mod Manager profiles.
+- **Game items** are read from the game files, so new items appear without an editor update.
 - **Gear Storage** tab: edit what is stored in backpacks, rigs and clothing with Gear Storage Expansion (gun slots, magazine pouches, medical pouches, open grids).
 - Items added by installed mods get their real name, size and category.
 

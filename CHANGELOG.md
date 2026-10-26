@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5.0
+
+### Highlights
+
+- **Save slot mods**: works with both **Save Slots** (by Joni, also bundled in RTV Mod Manager) and **Multi Save Slots Reborn**. Pick the slot to edit in Settings. Edits to the slot that is active in the game also update that slot's stored copy; other slots are edited in their own folder.
+- **Mod profiles**: reads the active **Metro Mod Loader** profile (`mod_config.cfg`) and **RTV Mod Manager** profiles. Mods switched off in the active profile are marked, and Gear Storage Expansion's MCM settings are read from the active profile's file (`config.ini` for Default, `<profile>.ini` otherwise).
+- **RTV Mod Manager**: mods in `mods/Library` are found too.
+- **Items from the game files**: the editor now reads item resources from `RTV.pck`, so items added by game updates show up without a new editor release. The reader is checked against the built-in catalog at startup; if it does not agree, only names derived from the file paths are used. Modded items from `.vmz` archives keep working as before.
+
+### Other
+
+- Backups are kept per slot (`slotN_` prefix) and restoring only offers backups of the slot being edited.
+- Added `scripts/test-slots-profiles.ts`.
+- Known limits: the binary resource reader and the Mod Manager `profile.json` reader were written from the engine/mod sources and synthetic samples, not from real Build 2 files.
+
 ## 0.4.0
 
 > Build 2 update by smelbravo, based on FINDarkside's Road to Vostok Save Editor (MIT).

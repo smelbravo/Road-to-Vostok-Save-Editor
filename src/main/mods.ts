@@ -2,6 +2,7 @@ import { readdir, readFile, stat } from 'fs/promises'
 import { join, extname } from 'path'
 import { inflateRaw } from 'zlib'
 import { promisify } from 'util'
+import { isModEnabled, mcmIniName, readProfileState } from './profiles'
 
 const inflateRawAsync = promisify(inflateRaw)
 
@@ -21,6 +22,10 @@ export interface InstalledMod {
   name: string
   version: string
   author: string
+  /** Lives in `mods/` or in RTV Mod Manager's `mods/Library` */
+  location: 'mods' | 'library'
+  /** Enabled in the active profile; null when no profile says anything about it */
+  enabled: boolean | null
 }
 
 export interface ModItem {
@@ -47,6 +52,9 @@ export interface ModScan {
   items: ModItem[]
   /** Parsed text of user://MCM/GSE/*.ini (newest first) when Gear Storage Expansion saved settings */
   gseSettingsIni: string | null
+  /** Active Metro Mod Loader / RTV Mod Manager profile ('' when none) and all known names */
+  activeProfile: string
+  profiles: string[]
   warnings: string[]
 }
 
@@ -231,7 +239,9 @@ export async function scanModArchive(
     id: info.id ?? stem,
     name: info.name ?? stem,
     version: info.version ?? '',
-    author: info.author ?? ''
+    author: info.author ?? '',
+    location: 'mods',
+    enabled: null
   }
   const items: ModItem[] = []
   for (const entry of entries) {
@@ -247,47 +257,83 @@ export async function scanModArchive(
   return { mod, items }
 }
 
-export async function scanMods(
-  modsDir: string | null,
-  mcmDir: string | null
-): Promise<Omit<ModScan, 'modsDir'>> {
+export interface ScanOptions {
+  modsDir: string | null
+  /** The game's user:// folder (mod_config.cfg, MCM) */
+  userDir: string | null
+  /** %APPDATA%/VostokModManager */
+  managerDir: string | null
+}
+
+async function scanFolder(
+  dir: string,
+  location: InstalledMod['location'],
+  result: Omit<ModScan, 'modsDir'>
+): Promise<void> {
+  let names: string[] = []
+  try {
+    names = await readdir(dir)
+  } catch {
+    return
+  }
+  for (const name of names.sort()) {
+    if (!MOD_EXTENSIONS.has(extname(name).toLowerCase())) continue
+    const full = join(dir, name)
+    try {
+      const info = await stat(full)
+      if (!info.isFile() || info.size > MAX_ARCHIVE_BYTES) continue
+      const { mod, items } = await scanModArchive(name, await readFile(full))
+      mod.location = location
+      // the same mod can sit in mods/ and mods/Library: keep one entry, prefer mods/
+      if (result.mods.some((m) => m.id === mod.id && m.version === mod.version)) continue
+      result.mods.push(mod)
+      result.items.push(...items)
+    } catch (e) {
+      result.warnings.push(`${name}: ${e instanceof Error ? e.message : 'unreadable'}`)
+    }
+  }
+}
+
+export async function scanMods(opts: ScanOptions): Promise<Omit<ModScan, 'modsDir'>> {
   const result: Omit<ModScan, 'modsDir'> = {
     mods: [],
     items: [],
     gseSettingsIni: null,
+    activeProfile: '',
+    profiles: [],
     warnings: []
   }
-  if (modsDir) {
-    let names: string[] = []
-    try {
-      names = await readdir(modsDir)
-    } catch {
-      names = []
-    }
-    for (const name of names.sort()) {
-      if (!MOD_EXTENSIONS.has(extname(name).toLowerCase())) continue
-      const full = join(modsDir, name)
-      try {
-        const info = await stat(full)
-        if (!info.isFile() || info.size > MAX_ARCHIVE_BYTES) continue
-        const { mod, items } = await scanModArchive(name, await readFile(full))
-        result.mods.push(mod)
-        result.items.push(...items)
-      } catch (e) {
-        result.warnings.push(`${name}: ${e instanceof Error ? e.message : 'unreadable'}`)
-      }
-    }
+  if (opts.modsDir) {
+    await scanFolder(opts.modsDir, 'mods', result)
+    await scanFolder(join(opts.modsDir, 'Library'), 'library', result)
   }
-  if (mcmDir) {
+
+  const state = await readProfileState(opts.userDir, opts.managerDir)
+  result.activeProfile = state.active
+  result.profiles = state.names
+  for (const mod of result.mods) {
+    mod.enabled = isModEnabled(mod, state.enabled)
+    // Library copies are only loaded when a profile enables them; loose files in mods/ are
+    // loaded unless a profile switches them off.
+    if (mod.enabled === null && mod.location === 'library' && state.enabled) mod.enabled = false
+  }
+
+  if (opts.userDir) {
     try {
-      const gseDir = join(mcmDir, 'GSE')
-      const inis = await Promise.all(
-        (await readdir(gseDir))
-          .filter((n) => n.toLowerCase().endsWith('.ini'))
-          .map(async (n) => ({ n, t: (await stat(join(gseDir, n))).mtimeMs }))
+      const gseDir = join(opts.userDir, 'MCM', 'GSE')
+      const inis = (await readdir(gseDir)).filter((n) => n.toLowerCase().endsWith('.ini'))
+      let chosen: string | undefined = inis.find(
+        (n) => n.toLowerCase() === mcmIniName(state.active).toLowerCase()
       )
-      inis.sort((a, b) => b.t - a.t)
-      if (inis.length > 0) result.gseSettingsIni = await readFile(join(gseDir, inis[0].n), 'utf8')
+      if (!chosen && !state.active) {
+        // no profile information: fall back to the most recently saved settings
+        const timed = await Promise.all(
+          inis.map(async (n) => ({ n, t: (await stat(join(gseDir, n))).mtimeMs }))
+        )
+        timed.sort((a, b) => b.t - a.t)
+        chosen = timed[0]?.n
+      }
+      if (chosen) result.gseSettingsIni = await readFile(join(gseDir, chosen), 'utf8')
     } catch {
       // GSE never saved settings: its defaults apply
     }
