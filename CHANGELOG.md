@@ -11,6 +11,11 @@
 
 ### Fixes
 
+- Fixed the black Quests/Character/... tabs and the freezes when switching pages; save tabs now show the load error instead of an empty screen.
+- Mod, game-item and task scans are cached (Rescan in Settings forces a refresh) and zips are read as streams, so large mods no longer lag the app.
+- More modded item icons: binary `.res` textures and icons stored in a different folder inside the mod archive are now found.
+- New "Modded" filter in Add Item; Gear Storage's add dialog now has category and Modded filters.
+
 - Icons of modded items now show up: the editor reads the icon each mod item points at (png/jpg, or an imported `.ctex`) from the mod archive.
 - Icons of vanilla items whose texture changed in Build 2 (e.g. some knives) are resolved from the game files instead of the built-in file names.
 - Gear Storage: slots grow to fit the item inside them, so rifles and pistols no longer overlap neighbouring slots.

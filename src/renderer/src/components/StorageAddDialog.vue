@@ -31,6 +31,8 @@ const emit = defineEmits<{
 
 const search = ref('')
 const onlyFitting = ref(true)
+const selectedCategory = ref<string | null>(null)
+const onlyModded = ref(false)
 const selectedPath = ref<string | null>(null)
 const condition = ref(100)
 const amount = ref(1)
@@ -41,7 +43,7 @@ const section = computed(() => {
   return container?.sections.find((s) => s.spec.key === props.sectionKey) ?? null
 })
 
-const candidates = computed<GameItem[]>(() => {
+const baseList = computed<GameItem[]>(() => {
   const spec = section.value?.spec
   let list = allItems.value.filter((i) => i.category !== 'Furniture' && i.category !== 'Backpacks')
   if (spec && onlyFitting.value && isBox(spec.kind)) {
@@ -49,6 +51,23 @@ const candidates = computed<GameItem[]>(() => {
       boxAccepts(spec.kind, { path: i.resourcePath, category: i.category, slots: i.slots ?? [] })
     )
   }
+  return list
+})
+
+const hasModded = computed(() => baseList.value.some((i) => i.modded))
+
+const categories = computed(() => {
+  const cats = new Set<string>()
+  for (const item of baseList.value) {
+    if (!onlyModded.value || item.modded) cats.add(item.category)
+  }
+  return [...cats].sort()
+})
+
+const candidates = computed<GameItem[]>(() => {
+  let list = baseList.value
+  if (onlyModded.value) list = list.filter((i) => i.modded)
+  if (selectedCategory.value) list = list.filter((i) => i.category === selectedCategory.value)
   const q = search.value.trim().toLowerCase()
   if (q) {
     list = list.filter(
@@ -57,6 +76,17 @@ const candidates = computed<GameItem[]>(() => {
   }
   return list
 })
+
+function toggleModded(): void {
+  onlyModded.value = !onlyModded.value
+  if (selectedCategory.value && !categories.value.includes(selectedCategory.value)) {
+    selectedCategory.value = null
+  }
+}
+
+function toggleCategory(cat: string): void {
+  selectedCategory.value = selectedCategory.value === cat ? null : cat
+}
 
 const selected = computed(
   () => candidates.value.find((i) => i.resourcePath === selectedPath.value) ?? null
@@ -76,6 +106,8 @@ watch(
   (open) => {
     if (open) return
     search.value = ''
+    selectedCategory.value = null
+    onlyModded.value = false
     selectedPath.value = null
     error.value = null
     onlyFitting.value = true
@@ -106,6 +138,26 @@ function confirm(): void {
 
       <div class="flex flex-col gap-3 flex-1 min-h-0">
         <Input v-model="search" placeholder="Search items..." class="h-8 text-sm" />
+
+        <div v-if="categories.length > 1 || hasModded" class="flex flex-wrap gap-1">
+          <Badge
+            v-if="hasModded"
+            :variant="onlyModded ? 'default' : 'outline'"
+            class="text-xs cursor-pointer select-none"
+            @click="toggleModded"
+          >
+            Modded
+          </Badge>
+          <Badge
+            v-for="cat in categories"
+            :key="cat"
+            :variant="selectedCategory === cat ? 'default' : 'secondary'"
+            class="text-xs cursor-pointer select-none"
+            @click="toggleCategory(cat)"
+          >
+            {{ cat }}
+          </Badge>
+        </div>
 
         <label
           v-if="section && isBox(section.spec.kind)"

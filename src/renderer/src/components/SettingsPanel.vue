@@ -129,7 +129,7 @@ onMounted(refreshDir)
           }}
           added to the catalog
         </span>
-        <Button variant="outline" size="sm" class="text-xs shrink-0" @click="loadMods">
+        <Button variant="outline" size="sm" class="text-xs shrink-0" @click="loadMods(true)">
           Rescan
         </Button>
       </div>

@@ -26,9 +26,9 @@ export const gseSettings = computed<GseSettings | undefined>(() => {
 })
 
 /** Scans mods once at startup. A failure only means modded items stay unnamed. */
-export async function loadMods(): Promise<void> {
+export async function loadMods(force = false): Promise<void> {
   try {
-    const scan = await window.api.scanMods()
+    const scan = await window.api.scanMods(force)
     modScan.value = scan
     registerModItems(scan.items)
     modScanError.value = null

@@ -83,37 +83,79 @@ onMounted(() => {
         </TabsList>
       </div>
 
-      <TabsContent v-if="loadError" value="character" class="flex-1 min-h-0 p-4 mt-0" />
+      <TabsContent v-if="loadError" value="character" class="flex-1 min-h-0 p-4 mt-0">
+        <div class="text-sm text-muted-foreground max-w-xl">
+          <p v-if="loadError" class="text-red-500">{{ loadError }}</p>
+          <p v-else>Nothing to show for this save.</p>
+          <p class="mt-2">Pick another save slot in Settings, or restore a backup.</p>
+        </div>
+      </TabsContent>
       <TabsContent v-else value="character" class="flex-1 min-h-0 p-4 mt-0 overflow-auto">
         <StatsPanel />
       </TabsContent>
 
-      <TabsContent v-if="loadError" value="inventory" class="flex-1 min-h-0 p-4 mt-0" />
+      <TabsContent v-if="loadError" value="inventory" class="flex-1 min-h-0 p-4 mt-0">
+        <div class="text-sm text-muted-foreground max-w-xl">
+          <p v-if="loadError" class="text-red-500">{{ loadError }}</p>
+          <p v-else>Nothing to show for this save.</p>
+          <p class="mt-2">Pick another save slot in Settings, or restore a backup.</p>
+        </div>
+      </TabsContent>
       <TabsContent v-else value="inventory" class="flex-1 min-h-0 p-4 mt-0">
         <InventoryPanel @open-add-dialog="openInventoryAddDialog" />
       </TabsContent>
 
-      <TabsContent v-if="loadError" value="storage" class="flex-1 min-h-0 p-4 mt-0" />
+      <TabsContent v-if="loadError" value="storage" class="flex-1 min-h-0 p-4 mt-0">
+        <div class="text-sm text-muted-foreground max-w-xl">
+          <p v-if="loadError" class="text-red-500">{{ loadError }}</p>
+          <p v-else>Nothing to show for this save.</p>
+          <p class="mt-2">Pick another save slot in Settings, or restore a backup.</p>
+        </div>
+      </TabsContent>
       <TabsContent v-else value="storage" class="flex-1 min-h-0 p-4 mt-0">
         <GearStoragePanel />
       </TabsContent>
 
-      <TabsContent v-if="loadError" value="furniture" class="flex-1 min-h-0 p-4 mt-0" />
+      <TabsContent v-if="loadError" value="furniture" class="flex-1 min-h-0 p-4 mt-0">
+        <div class="text-sm text-muted-foreground max-w-xl">
+          <p v-if="loadError" class="text-red-500">{{ loadError }}</p>
+          <p v-else>Nothing to show for this save.</p>
+          <p class="mt-2">Pick another save slot in Settings, or restore a backup.</p>
+        </div>
+      </TabsContent>
       <TabsContent v-else value="furniture" class="flex-1 min-h-0 p-4 mt-0">
         <FurniturePanel @open-add-dialog="openFurnitureAddDialog" />
       </TabsContent>
 
-      <TabsContent v-if="loadError" value="cat" class="flex-1 min-h-0 p-4 mt-0" />
+      <TabsContent v-if="loadError" value="cat" class="flex-1 min-h-0 p-4 mt-0">
+        <div class="text-sm text-muted-foreground max-w-xl">
+          <p v-if="loadError" class="text-red-500">{{ loadError }}</p>
+          <p v-else>Nothing to show for this save.</p>
+          <p class="mt-2">Pick another save slot in Settings, or restore a backup.</p>
+        </div>
+      </TabsContent>
       <TabsContent v-else value="cat" class="flex-1 min-h-0 p-4 mt-0 overflow-auto">
         <CatPanel />
       </TabsContent>
 
-      <TabsContent v-if="loadError || !world" value="world" class="flex-1 min-h-0 p-4 mt-0" />
+      <TabsContent v-if="loadError || !world" value="world" class="flex-1 min-h-0 p-4 mt-0">
+        <div class="text-sm text-muted-foreground max-w-xl">
+          <p v-if="loadError" class="text-red-500">{{ loadError }}</p>
+          <p v-else>Nothing to show for this save.</p>
+          <p class="mt-2">Pick another save slot in Settings, or restore a backup.</p>
+        </div>
+      </TabsContent>
       <TabsContent v-else value="world" class="flex-1 min-h-0 p-4 mt-0 overflow-auto">
         <WorldPanel />
       </TabsContent>
 
-      <TabsContent v-if="loadError || !traders" value="quests" class="flex-1 min-h-0 p-4 mt-0" />
+      <TabsContent v-if="loadError || !traders" value="quests" class="flex-1 min-h-0 p-4 mt-0">
+        <div class="text-sm text-muted-foreground max-w-xl">
+          <p v-if="loadError" class="text-red-500">{{ loadError }}</p>
+          <p v-else>Nothing to show for this save.</p>
+          <p class="mt-2">Pick another save slot in Settings, or restore a backup.</p>
+        </div>
+      </TabsContent>
       <TabsContent v-else value="quests" class="flex-1 min-h-0 p-4 mt-0 overflow-auto">
         <QuestsPanel />
       </TabsContent>

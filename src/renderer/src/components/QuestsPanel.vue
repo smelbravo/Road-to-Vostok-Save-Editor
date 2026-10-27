@@ -72,7 +72,7 @@ function difficultyVariant(difficulty: string) {
         <div class="flex items-center gap-2">
           <h3 class="text-sm font-semibold">{{ trader.displayName }}</h3>
           <span class="text-xs text-muted-foreground">
-            {{ completedCount(trader.key) }}/{{ questsByTrader.value.get(trader.key)?.length ?? 0 }}
+            {{ completedCount(trader.key) }}/{{ questsByTrader.get(trader.key)?.length ?? 0 }}
             completed
           </span>
         </div>
@@ -88,7 +88,7 @@ function difficultyVariant(difficulty: string) {
 
       <div class="space-y-1">
         <label
-          v-for="quest in questsByTrader.value.get(trader.key)"
+          v-for="quest in questsByTrader.get(trader.key)"
           :key="quest.name"
           class="flex items-center gap-3 text-sm cursor-pointer select-none rounded-md border border-border px-3 py-2 hover:bg-muted/50 transition-colors"
           :class="isCompleted(trader.key, quest.name) ? 'border-primary/50 bg-primary/5' : ''"

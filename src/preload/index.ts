@@ -19,9 +19,11 @@ const api = {
     ipcRenderer.invoke('saves:set-source', source),
 
   // Installed mods (Gear Storage Expansion, item mods, ...) and the game's own items
-  scanMods: (): Promise<ModScan> => ipcRenderer.invoke('mods:scan'),
-  scanGameItems: (): Promise<GameCatalog> => ipcRenderer.invoke('mods:scan-game'),
-  scanGameTasks: (): Promise<GameTaskScan> => ipcRenderer.invoke('mods:scan-tasks'),
+  scanMods: (force = false): Promise<ModScan> => ipcRenderer.invoke('mods:scan', force),
+  scanGameItems: (force = false): Promise<GameCatalog> =>
+    ipcRenderer.invoke('mods:scan-game', force),
+  scanGameTasks: (force = false): Promise<GameTaskScan> =>
+    ipcRenderer.invoke('mods:scan-tasks', force),
 
   // Backups
   listBackups: (): Promise<BackupEntry[]> => ipcRenderer.invoke('backups:list'),

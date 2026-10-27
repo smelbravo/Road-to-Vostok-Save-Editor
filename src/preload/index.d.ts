@@ -28,9 +28,9 @@ interface SaveApi {
   setSaveSource(source: SaveSource): Promise<SourceInfo>
 
   // Installed mods
-  scanMods(): Promise<ModScan>
-  scanGameItems(): Promise<GameCatalog>
-  scanGameTasks(): Promise<GameTaskScan>
+  scanMods(force?: boolean): Promise<ModScan>
+  scanGameItems(force?: boolean): Promise<GameCatalog>
+  scanGameTasks(force?: boolean): Promise<GameTaskScan>
 
   // Backups
   listBackups(): Promise<BackupEntry[]>

@@ -69,20 +69,26 @@ watch(
 
 const search = ref('')
 const selectedCategory = ref<string | null>(null)
+const onlyModded = ref(false)
 const selectedIndex = ref(0)
 const condition = ref(100)
 const amount = ref(1)
 const listRef = ref<HTMLElement | null>(null)
 const addError = ref<string | null>(null)
 
+const hasModded = computed(() => visibleItems.value.some((i) => i.modded))
+
 const categories = computed(() => {
   const cats = new Set<string>()
-  for (const item of visibleItems.value) cats.add(item.category)
+  for (const item of visibleItems.value) {
+    if (!onlyModded.value || item.modded) cats.add(item.category)
+  }
   return [...cats].sort()
 })
 
 const filteredItems = computed(() => {
   let result = visibleItems.value
+  if (onlyModded.value) result = result.filter((i) => i.modded)
   if (selectedCategory.value) {
     result = result.filter((i) => i.category === selectedCategory.value)
   }
@@ -94,6 +100,15 @@ const filteredItems = computed(() => {
   }
   return result
 })
+
+function toggleModded(): void {
+  onlyModded.value = !onlyModded.value
+  if (selectedCategory.value && !categories.value.includes(selectedCategory.value)) {
+    selectedCategory.value = null
+  }
+  selectedIndex.value = 0
+  addError.value = null
+}
 
 function toggleCategory(cat: string): void {
   selectedCategory.value = selectedCategory.value === cat ? null : cat
@@ -183,6 +198,7 @@ function confirm(): void {
 function reset(): void {
   search.value = ''
   selectedCategory.value = null
+  onlyModded.value = false
   selectedIndex.value = 0
   condition.value = 100
   amount.value = 1
@@ -213,7 +229,15 @@ function reset(): void {
           @keydown="onKeydown"
         />
 
-        <div v-if="categories.length > 1" class="flex flex-wrap gap-1">
+        <div v-if="categories.length > 1 || hasModded" class="flex flex-wrap gap-1">
+          <Badge
+            v-if="hasModded"
+            :variant="onlyModded ? 'default' : 'outline'"
+            class="text-xs cursor-pointer select-none"
+            @click="toggleModded"
+          >
+            Modded
+          </Badge>
           <Badge
             v-for="cat in categories"
             :key="cat"

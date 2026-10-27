@@ -41,6 +41,7 @@ const CATEGORIES: ReadonlySet<string> = new Set<ItemCategory>([
 /** Registers scanned mod items (or, with `fromGame`, items found in the game's own files). Items already known by path (vanilla or earlier scan) are skipped. */
 export function registerModItems(found: ModItem[], fromGame = false): void {
   const added: GameItem[] = []
+  const touched = new Set<GameItem[]>()
   for (const m of found) {
     if (ITEMS_BY_PATH.has(m.resourcePath)) continue
     const item: GameItem = {
@@ -69,8 +70,9 @@ export function registerModItems(found: ModItem[], fromGame = false): void {
         ITEMS_BY_SLOT.set(slot, list)
       }
       list.push(item)
-      list.sort((a, b) => a.displayName.localeCompare(b.displayName))
+      touched.add(list)
     }
   }
+  for (const list of touched) list.sort((a, b) => a.displayName.localeCompare(b.displayName))
   if (added.length > 0) modItems.value = [...modItems.value, ...added]
 }

@@ -91,7 +91,7 @@ export async function listPckEntries(pckPath: string): Promise<PckEntry[]> {
 // DXT5 (BC3) block decompression
 // ---------------------------------------------------------------------------
 
-function decodeDxt5(data: Buffer, width: number, height: number): Uint8Array {
+export function decodeDxt5(data: Buffer, width: number, height: number): Uint8Array {
   const rgba = new Uint8Array(width * height * 4)
   const blocksX = Math.ceil(width / 4)
   const blocksY = Math.ceil(height / 4)

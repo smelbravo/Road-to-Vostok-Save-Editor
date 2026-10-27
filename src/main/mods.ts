@@ -1,4 +1,4 @@
-import { readdir, readFile, stat } from 'fs/promises'
+import { open, readdir, readFile, stat } from 'fs/promises'
 import { join, extname } from 'path'
 import { inflateRaw } from 'zlib'
 import { promisify } from 'util'
@@ -83,18 +83,41 @@ const EOCD_SIGNATURE = 0x06054b50
 const CENTRAL_SIGNATURE = 0x02014b50
 const LOCAL_SIGNATURE = 0x04034b50
 
-export function listZipEntries(buf: Buffer): ZipEntry[] {
-  const minEocd = 22
-  let eocd = -1
-  for (let i = buf.length - minEocd; i >= Math.max(0, buf.length - minEocd - 0xffff); i--) {
-    if (buf.readUInt32LE(i) === EOCD_SIGNATURE) {
-      eocd = i
-      break
-    }
+/** Random access to the bytes of an archive (a file on disk or a buffer in memory). */
+export interface ByteSource {
+  length: number
+  read(offset: number, len: number): Promise<Buffer>
+}
+
+export function bufferSource(buf: Buffer): ByteSource {
+  return { length: buf.length, read: async (o, n) => buf.subarray(o, o + n) }
+}
+
+/** Reads only what is asked for, so big mods (hundreds of MB of textures) are never loaded whole. */
+export async function fileSource(
+  path: string
+): Promise<{ src: ByteSource; close(): Promise<void> }> {
+  const fh = await open(path, 'r')
+  const { size } = await fh.stat()
+  return {
+    src: {
+      length: size,
+      read: async (offset, len) => {
+        const n = Math.max(0, Math.min(len, size - offset))
+        const out = Buffer.alloc(n)
+        if (n > 0) await fh.read(out, 0, n, offset)
+        return out
+      }
+    },
+    close: () => fh.close()
   }
-  if (eocd < 0) throw new Error('not a zip archive')
-  const count = buf.readUInt16LE(eocd + 10)
-  let pos = buf.readUInt32LE(eocd + 16)
+}
+
+type ZipInput = Buffer | ByteSource
+const asSource = (b: ZipInput): ByteSource => (Buffer.isBuffer(b) ? bufferSource(b) : b)
+
+function parseCentral(buf: Buffer, count: number): ZipEntry[] {
+  let pos = 0
   const entries: ZipEntry[] = []
   for (let i = 0; i < count; i++) {
     if (pos + 46 > buf.length || buf.readUInt32LE(pos) !== CENTRAL_SIGNATURE) break
@@ -113,12 +136,31 @@ export function listZipEntries(buf: Buffer): ZipEntry[] {
   return entries
 }
 
-export async function readZipEntry(buf: Buffer, entry: ZipEntry): Promise<Buffer> {
-  if (buf.readUInt32LE(entry.offset) !== LOCAL_SIGNATURE) throw new Error('bad local header')
-  const nameLen = buf.readUInt16LE(entry.offset + 26)
-  const extraLen = buf.readUInt16LE(entry.offset + 28)
-  const start = entry.offset + 30 + nameLen + extraLen
-  const data = buf.subarray(start, start + entry.compressedSize)
+export async function listZipEntries(input: ZipInput): Promise<ZipEntry[]> {
+  const src = asSource(input)
+  const tailLen = Math.min(src.length, 0xffff + 22)
+  const tail = await src.read(src.length - tailLen, tailLen)
+  let eocd = -1
+  for (let i = tail.length - 22; i >= 0; i--) {
+    if (tail.readUInt32LE(i) === EOCD_SIGNATURE) {
+      eocd = i
+      break
+    }
+  }
+  if (eocd < 0) throw new Error('not a zip archive')
+  const count = tail.readUInt16LE(eocd + 10)
+  const cdSize = tail.readUInt32LE(eocd + 12)
+  const cdOffset = tail.readUInt32LE(eocd + 16)
+  return parseCentral(await src.read(cdOffset, cdSize), count)
+}
+
+export async function readZipEntry(input: ZipInput, entry: ZipEntry): Promise<Buffer> {
+  const src = asSource(input)
+  const head = await src.read(entry.offset, 30)
+  if (head.length < 30 || head.readUInt32LE(0) !== LOCAL_SIGNATURE)
+    throw new Error('bad local header')
+  const start = entry.offset + 30 + head.readUInt16LE(26) + head.readUInt16LE(28)
+  const data = await src.read(start, entry.compressedSize)
   if (entry.method === 0) return Buffer.from(data)
   if (entry.method === 8) return inflateRawAsync(data)
   throw new Error(`unsupported zip method ${entry.method}`)
@@ -242,7 +284,6 @@ export function parseItemTres(text: string, resourcePath: string, modId: string)
 // ---------------------------------------------------------------------------
 
 const MOD_EXTENSIONS = new Set(['.vmz', '.zip'])
-const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024
 const MAX_TRES_BYTES = 256 * 1024
 
 /** Receives an icon found inside a mod; returns true when it was stored under `key`. */
@@ -252,7 +293,7 @@ export type IconSink = (key: string, ext: string, data: Buffer) => Promise<true 
 const safeKey = (s: string): string => s.replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 80)
 
 async function extractItemIcon(
-  buf: Buffer,
+  buf: ZipInput,
   entries: ZipEntry[],
   item: ModItem,
   sink: IconSink
@@ -270,9 +311,17 @@ async function extractItemIcon(
     if (r === true) item.iconFile = key
     else item.iconProblem = r
   }
-  const direct = find(want)
+  // Some archives keep the file under another folder than the one the item names; fall back to
+  // the file name when it is unique inside the archive.
+  const baseName = want.split('/').pop() ?? want
+  const sameName = entries.filter((e) => e.name.toLowerCase().split('/').pop() === baseName)
+  const direct = find(want) ?? (sameName.length === 1 ? sameName[0] : undefined)
   const ext = want.split('.').pop() ?? ''
-  if (direct && direct.size < 16 * 1024 * 1024 && ['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
+  if (
+    direct &&
+    direct.size < 16 * 1024 * 1024 &&
+    ['png', 'jpg', 'jpeg', 'webp', 'res'].includes(ext)
+  ) {
     done(await sink(key, ext, await readZipEntry(buf, direct)))
     return
   }
@@ -309,10 +358,10 @@ async function extractItemIcon(
 
 export async function scanModArchive(
   file: string,
-  buf: Buffer,
+  buf: ZipInput,
   onIcon?: IconSink
 ): Promise<{ mod: InstalledMod; items: ModItem[] }> {
-  const entries = listZipEntries(buf)
+  const entries = await listZipEntries(buf)
   const manifest = entries.find((e) => e.name.toLowerCase() === 'mod.txt')
   let info: Record<string, string> = {}
   if (manifest) info = parseModTxt((await readZipEntry(buf, manifest)).toString('utf8'))
@@ -376,8 +425,15 @@ async function scanFolder(
     const full = join(dir, name)
     try {
       const info = await stat(full)
-      if (!info.isFile() || info.size > MAX_ARCHIVE_BYTES) continue
-      const { mod, items } = await scanModArchive(name, await readFile(full), onIcon)
+      if (!info.isFile()) continue
+      const handle = await fileSource(full)
+      let scanned: Awaited<ReturnType<typeof scanModArchive>>
+      try {
+        scanned = await scanModArchive(name, handle.src, onIcon)
+      } finally {
+        await handle.close()
+      }
+      const { mod, items } = scanned
       mod.location = location
       // the same mod can sit in mods/ and mods/Library: keep one entry, prefer mods/
       if (result.mods.some((m) => m.id === mod.id && m.version === mod.version)) continue
