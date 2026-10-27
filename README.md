@@ -13,7 +13,8 @@ A desktop save file editor for [Road to Vostok](https://store.steampowered.com/a
 - **Mod profiles**: understands Metro Mod Loader and RTV Mod Manager profiles.
 - **Game items** are read from the game files, so new items appear without an editor update.
 - **Gear Storage** tab: edit what is stored in backpacks, rigs and clothing with Gear Storage Expansion (gun slots, magazine pouches, medical pouches, open grids).
-- Items added by installed mods get their real name, size and category.
+- Items added by installed mods get their real name, size, category and icon (png/jpg/webp, `.ctex` and `.res` textures), and can be filtered with the **Modded** chip when adding items.
+- Modded weapons show their equipped attachments on the icon and can be edited in the weapon workbench; compatibility and positions are read from the mod's own files.
 
 See [CHANGELOG.md](CHANGELOG.md).
 
