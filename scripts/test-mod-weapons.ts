@@ -58,5 +58,33 @@ check(
   'mod mag keeps its overlay',
   !layout?.find((o) => o.attachmentPath.endsWith('SV98_Magazine.tres'))?.noOverlay
 )
+// G28-style scene: full-size layers without a position, a magazine instance with its own offset
+const g28 = parseTetrisScene(`[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://Items/Weapons/M78/M78_7x2.tscn" id="tile"]
+[ext_resource type="Texture2D" path="res://mods/G28/Icons/Over_Scope.png" id="o_Scope"]
+
+[node name="G28" instance=ExtResource("tile")]
+
+[node name="G28_Magazine" parent="." instance=ExtResource("tile")]
+visible = false
+show_behind_parent = true
+position = Vector2(-28.7, 42.8)
+scale = Vector2(0.903, 0.903)
+
+[node name="G28_Scope" type="Sprite2D" parent="."]
+visible = false
+use_parent_material = true
+texture = ExtResource("o_Scope")
+`)!
+check(
+  'G28 full-size layer parsed',
+  g28.overlays.some((o) => o.name === 'G28_Scope' && o.fill && !!o.texture)
+)
+check(
+  'G28 magazine instance is a positioned overlay, not a hidden node',
+  g28.overlays.some((o) => o.name === 'G28_Magazine' && o.position[0] === -28.7) &&
+    g28.hidden.length === 0
+)
 console.log(names.join(', '))
 process.exit(fails ? 1 : 0)

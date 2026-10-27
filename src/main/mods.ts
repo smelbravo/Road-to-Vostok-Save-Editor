@@ -70,6 +70,8 @@ export interface ModLayoutOverlay {
   texture?: string
   /** Icon cache key once the texture was extracted */
   iconFile?: string
+  /** A layer the size of the weapon icon, drawn over it when the attachment is fitted */
+  fill?: boolean
 }
 
 export interface ModLayout {
@@ -354,13 +356,19 @@ export function parseTetrisScene(text: string): ModLayout | null {
       continue
     }
     if (parent !== '.') continue
-    if (props.visible === 'false' && !/\btype="/.test(head)) hidden.push(name)
+    const isNew = /\btype="/.test(head) || /\binstance=/.test(head)
+    if (props.visible === 'false' && !isNew) hidden.push(name)
     const position = vec(props.position)
-    // A visible-by-default Sprite2D, or an inherited node given a new position
-    if (!position) continue
-    const scale = vec(props.scale)
     const texId = /^ExtResource\(\s*"?([^")]+)"?\s*\)$/.exec(props.texture ?? '')?.[1]
     const texture = texId ? ext.get(texId) : undefined
+    if (!position) {
+      // A Sprite2D left at the origin is a layer the size of the weapon icon (G28-style overlays)
+      if (/\btype="Sprite2D"/.test(head) && texture) {
+        overlays.push({ name, position: [0, 0], scale: 1, behind: false, texture, fill: true })
+      }
+      continue
+    }
+    const scale = vec(props.scale)
     overlays.push({
       name,
       position,

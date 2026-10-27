@@ -12,6 +12,8 @@ export interface RsrcImage {
   /** Godot Image format name, e.g. "RGBA8", "DXT5" */
   format: string
   data: Buffer
+  /** A ready-made PNG / WebP file (portable compressed textures keep lossless images that way) */
+  encoded?: 'png' | 'webp'
 }
 
 const isDict = (v: RsrcValue | undefined): v is { dict: Record<string, RsrcValue> } =>
@@ -26,6 +28,12 @@ export function imageFromRsrc(buf: Buffer): RsrcImage | string {
     ...(res.type === 'Image' ? [res.props] : [])
   ]
   const dict = holders.map((p) => p.get('data')).find(isDict)?.dict
+  const packed = res.props.get('_data')
+  if (!dict && Buffer.isBuffer(packed)) {
+    const found = embeddedImage(packed)
+    if (found) return found
+    return `portable texture without a lossless image (${packed.length} bytes)`
+  }
   if (!dict)
     return `no image data in ${res.type || 'resource'}${res.failure ? ` (${res.failure})` : ''}`
   const width = Number(dict.width)
@@ -119,4 +127,24 @@ export function decodeDxt1(data: Buffer, width: number, height: number): Uint8Ar
     }
   }
   return out
+}
+
+/** Lossless PNG / WebP inside a PortableCompressedTexture2D's `_data` (16-byte header, then the file) */
+function embeddedImage(data: Buffer): RsrcImage | null {
+  const width = data.length >= 8 ? data.readUInt16LE(4) : 0
+  const height = data.length >= 8 ? data.readUInt16LE(6) : 0
+  const riff = data.indexOf('RIFF', 0, 'latin1')
+  if (riff >= 0 && data.toString('latin1', riff + 8, riff + 12) === 'WEBP') {
+    const size = data.readUInt32LE(riff + 4) + 8
+    return {
+      width,
+      height,
+      format: 'WEBP',
+      data: data.subarray(riff, riff + size),
+      encoded: 'webp'
+    }
+  }
+  const png = data.indexOf(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+  if (png >= 0) return { width, height, format: 'PNG', data: data.subarray(png), encoded: 'png' }
+  return null
 }

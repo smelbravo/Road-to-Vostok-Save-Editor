@@ -43,11 +43,14 @@ async function storeModIcon(key: string, ext: string, data: Buffer): Promise<tru
     } else if (ext === 'res') {
       const img = imageFromRsrc(data)
       if (typeof img === 'string') return img
-      let rgba = toRgba(img)
-      if (!rgba && img.format === 'DXT5') rgba = decodeDxt5(img.data, img.width, img.height)
-      if (!rgba && img.format === 'DXT1') rgba = decodeDxt1(img.data, img.width, img.height)
-      if (!rgba) return `unsupported image format ${img.format}`
-      out = encodePng(rgba, img.width, img.height)
+      if (img.encoded) out = img.data
+      else {
+        let rgba = toRgba(img)
+        if (!rgba && img.format === 'DXT5') rgba = decodeDxt5(img.data, img.width, img.height)
+        if (!rgba && img.format === 'DXT1') rgba = decodeDxt1(img.data, img.width, img.height)
+        if (!rgba) return `unsupported image format ${img.format}`
+        out = encodePng(rgba, img.width, img.height)
+      }
     } else return `unsupported icon format .${ext}`
     if (out.length === 0) return 'empty image'
     const dir = getCacheDir()

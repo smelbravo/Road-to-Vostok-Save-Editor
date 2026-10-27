@@ -83,6 +83,7 @@ export interface ModItem {
       behind: boolean
       /** Icon cache key of the sprite's own texture */
       iconFile?: string
+      fill?: boolean
     }[]
     hidden: string[]
   }

@@ -11,6 +11,9 @@
 
 ### Fixes
 
+- Icons stored as compressed `.res` textures (zstd, used by NARK's Karambit and others) and as portable textures with a lossless WebP/PNG inside (Green Swamp ghillie items) are now read.
+- G28-style weapons: attachments that are drawn as full-size layers over the weapon icon (scope, suppressor, bipod, camo) are shown on the icon and offered in the workbench, even when the weapon's `compatible` list only names the vanilla ones. Attachments can also claim a weapon from their own `compatible` list.
+
 - Modded weapons: attachments the mod lists as compatible are always selectable in the workbench and in the right-click menu, even when the weapon's scene gives them no position; attachment sprites use the mod's own texture, so magazines and optics look like they do in game. Camo-type attachments get their own slot.
 - Gear Storage: right-click an item for Edit Loadout / Edit Armor, Remove attachment, Move to inventory and Delete, like in the inventory.
 - Icons: compressed (RSCC) and DXT1 `.res` textures are read; the icon diagnostics in Settings now show the real reason and the icon path.

@@ -130,6 +130,7 @@ const fitTransform = computed(() => {
 
   const factor = props.cellSize / 64
   for (const att of atts) {
+    if (att.fill) continue
     const cx = wrapW / 2 + 0.5 * att.position[0] * factor * s
     const cy = wrapH / 2 + 0.5 * att.position[1] * factor * s
     const aw = att.attW * props.cellSize * att.scale * s
@@ -162,6 +163,7 @@ const fitTransform = computed(() => {
 })
 
 function attStyle(att: ResolvedAttachment) {
+  if (att.fill) return { left: '0', top: '0', width: '100%', height: '100%', zIndex: 2 }
   const factor = props.cellSize / 64
   const s = imgScale.value
   return {

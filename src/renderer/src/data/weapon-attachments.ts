@@ -13,6 +13,8 @@ export interface AttachmentOverlay {
   iconFile?: string
   /** Selectable in the workbench but not drawn (position unknown or no sprite) */
   noOverlay?: boolean
+  /** A layer the size of the weapon icon, drawn over it */
+  fill?: boolean
 }
 
 /** Attachment overlay positions per weapon, keyed by weapon resource path */

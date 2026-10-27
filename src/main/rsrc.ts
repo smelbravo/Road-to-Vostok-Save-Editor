@@ -109,7 +109,11 @@ const fail = (e: unknown): string => (e instanceof Error ? e.message : 'unreadab
 
 export function parseRsrc(buf: Buffer): RsrcResource | null {
   try {
-    return parseRsrcInner(unpackRscc(buf))
+    const plain = unpackRscc(buf)
+    // A compressed file keeps no "RSRC" magic inside the stream, so its offsets count from the
+    // header's first byte; putting the magic back shifts every position by 4.
+    if (plain === buf) return parseRsrcInner(buf, 0)
+    return parseRsrcInner(Buffer.concat([Buffer.from('RSRC', 'latin1'), plain]), 4)
   } catch {
     return null
   }
@@ -200,7 +204,7 @@ export function unpackRscc(buf: Buffer): Buffer {
   return Buffer.concat(parts)
 }
 
-function parseRsrcInner(buf: Buffer): RsrcResource | null {
+function parseRsrcInner(buf: Buffer, shift: number): RsrcResource | null {
   if (buf.length < 64 || buf.toString('ascii', 0, 4) !== 'RSRC') return null
   const probe = new Reader(buf)
   probe.pos = 4
@@ -349,7 +353,7 @@ function parseRsrcInner(buf: Buffer): RsrcResource | null {
     let ok = true
     let resType = ''
     try {
-      r.pos = offsets[idx]
+      r.pos = offsets[idx] + shift
       resType = r.str()
       const count = r.u32()
       if (count > 10000) throw new Unsupported()

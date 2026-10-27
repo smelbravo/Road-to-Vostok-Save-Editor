@@ -34,6 +34,7 @@ export interface ModWeaponInput {
   subtype?: string
   compatible?: string[]
   modId?: string
+  id?: string
   layout?: {
     base: string
     overlays: {
@@ -42,6 +43,7 @@ export interface ModWeaponInput {
       scale: number
       behind: boolean
       iconFile?: string
+      fill?: boolean
     }[]
     hidden: string[]
   }
@@ -69,64 +71,68 @@ export function registerModAttachmentSubtypes(items: ModWeaponInput[]): void {
 }
 
 export function registerModWeaponLayouts(items: ModWeaponInput[]): void {
+  // Attachments by name ("SV98_Scope"), so scene nodes can be tied to the items they draw
+  const attachments = items.filter((i) => i.category === 'Attachments')
+  const lookup = (name: string, modId?: string): string | undefined => {
+    const hits = attachments.filter((a) => a.id === name || stemOf(a.resourcePath) === name)
+    return (hits.find((a) => a.modId === modId) ?? hits[0])?.resourcePath
+  }
+
   for (const weapon of items) {
     if (weapon.category !== 'Weapons') continue
-    if (!weapon.layout && !weapon.compatible?.length) continue
+    // Attachments can also claim the weapon from their side (`compatible` on the attachment)
+    const claimed = attachments
+      .filter((a) => a.compatible?.includes(weapon.resourcePath))
+      .map((a) => a.resourcePath)
+    const compatible = new Set([...(weapon.compatible ?? []), ...claimed])
+    if (!weapon.layout && compatible.size === 0) continue
     if (WEAPON_ATTACHMENT_LAYOUTS.has(weapon.resourcePath)) continue
     const layout = weapon.layout ?? { base: '', overlays: [], hidden: [] }
     const hidden = new Set(layout.hidden)
-    const compatible = new Set(weapon.compatible ?? [])
 
-    const result: AttachmentOverlay[] = baseLayout(layout.base).filter(
-      (o) => !hidden.has(stemOf(o.attachmentPath))
+    // Inherited (vanilla) entries the weapon accepts, then the mod's own nodes laid over them
+    const inherited = baseLayout(layout.base).filter(
+      (o) => !hidden.has(stemOf(o.attachmentPath)) && accepted(o, compatible)
     )
-
+    const result: AttachmentOverlay[] = [...inherited]
     for (const overlay of layout.overlays) {
-      // Same mod first (SV98_Scope), then any item of that name (ACOG)
-      const target = [...compatible].find((p) => stemOf(p) === overlay.name)
+      const target = lookup(overlay.name, weapon.modId)
       if (!target || !ITEMS_BY_PATH.has(target)) continue
       const entry: AttachmentOverlay = {
         attachmentPath: target,
         position: overlay.position,
         scale: overlay.scale,
         behind: overlay.behind,
-        ...(overlay.iconFile ? { iconFile: overlay.iconFile } : {})
+        ...(overlay.iconFile ? { iconFile: overlay.iconFile } : {}),
+        ...(overlay.fill ? { fill: true } : {})
       }
       const at = result.findIndex((o) => o.attachmentPath === target)
       if (at >= 0) result[at] = entry
       else result.push(entry)
     }
 
-    // When the weapon lists what it accepts, only those attachments are offered; accepted
-    // attachments the scene places nowhere stay selectable (just not drawn on the icon)
-    let finalLayout = result
-    if (compatible.size > 0) {
-      finalLayout = result.filter(
-        (o) => compatible.has(o.attachmentPath) || isMagazineAlias(o, compatible)
+    // Accepted attachments the scene places nowhere stay selectable (just not drawn on the icon)
+    for (const path of compatible) {
+      if (
+        result.some((o) => o.attachmentPath === path || stemOf(o.attachmentPath) === stemOf(path))
       )
-      for (const path of compatible) {
-        if (
-          finalLayout.some(
-            (o) => o.attachmentPath === path || stemOf(o.attachmentPath) === stemOf(path)
-          )
-        )
-          continue
-        const subtype = ATTACHMENT_SUBTYPE.get(path)
-        if (!subtype || !ITEMS_BY_PATH.has(path)) continue
-        finalLayout.push({
-          attachmentPath: path,
-          position: DEFAULT_DOT[subtype] ?? [0, 0],
-          scale: 0.5,
-          noOverlay: true
-        })
-      }
+        continue
+      const subtype = ATTACHMENT_SUBTYPE.get(path)
+      if (!subtype || !ITEMS_BY_PATH.has(path)) continue
+      result.push({
+        attachmentPath: path,
+        position: DEFAULT_DOT[subtype] ?? [0, 0],
+        scale: 0.5,
+        noOverlay: true
+      })
     }
-    if (finalLayout.length > 0) WEAPON_ATTACHMENT_LAYOUTS.set(weapon.resourcePath, finalLayout)
+    if (result.length > 0) WEAPON_ATTACHMENT_LAYOUTS.set(weapon.resourcePath, result)
   }
 }
 
-// Vanilla layouts key some magazines by a weapon-specific path; the .tres lists the real one.
-function isMagazineAlias(overlay: AttachmentOverlay, compatible: Set<string>): boolean {
+/** An inherited entry stays when the weapon lists it, or lists the same magazine under its real path */
+function accepted(overlay: AttachmentOverlay, compatible: Set<string>): boolean {
+  if (compatible.size === 0) return true
   const stem = stemOf(overlay.attachmentPath)
-  return [...compatible].some((p) => stemOf(p) === stem)
+  return compatible.has(overlay.attachmentPath) || [...compatible].some((p) => stemOf(p) === stem)
 }
