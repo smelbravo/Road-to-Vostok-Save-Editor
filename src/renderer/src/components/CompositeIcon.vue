@@ -41,11 +41,12 @@ const resolvedAttachments = computed<ResolvedAttachment[]>(() => {
   for (const nestedPath of props.nested) {
     const layoutPath = resolveLayoutPath(nestedPath, props.itemPath) ?? nestedPath
     const overlay = layouts.find((l) => l.attachmentPath === layoutPath)
-    if (!overlay) continue
+    if (!overlay || overlay.noOverlay) continue
     const item = ITEMS_BY_PATH.get(nestedPath)
-    if (!item?.iconFile) continue
+    const iconFile = overlay.iconFile ?? item?.iconFile
+    if (!item || !iconFile) continue
     const size = getItemSize(item)
-    result.push({ ...overlay, iconFile: item.iconFile, attW: size.w, attH: size.h })
+    result.push({ ...overlay, iconFile, attW: size.w, attH: size.h })
   }
   return result
 })

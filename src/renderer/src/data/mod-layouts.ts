@@ -13,6 +13,21 @@ import { WEAPON_ATTACHMENT_LAYOUTS, type AttachmentOverlay } from './weapon-atta
 
 const KNOWN_SUBTYPES = new Set<string>(['Optic', 'Muzzle', 'Laser', 'Magazine'])
 
+/** Where the workbench puts the slot dot of an attachment the scene gives no position for */
+const DEFAULT_DOT: Record<string, [number, number]> = {
+  Optic: [-30, -95],
+  Muzzle: [310, -46],
+  Laser: [150, -46],
+  Magazine: [2, 34],
+  Camo: [100, 70],
+  Other: [200, 70]
+}
+
+function subtypeOf(item: { subtype?: string; resourcePath: string }): AttachmentSubtype {
+  if (item.subtype && KNOWN_SUBTYPES.has(item.subtype)) return item.subtype as AttachmentSubtype
+  return /camo|cover|skin/i.test(`${item.subtype ?? ''} ${item.resourcePath}`) ? 'Camo' : 'Other'
+}
+
 export interface ModWeaponInput {
   resourcePath: string
   category: string
@@ -21,7 +36,13 @@ export interface ModWeaponInput {
   modId?: string
   layout?: {
     base: string
-    overlays: { name: string; position: [number, number]; scale: number; behind: boolean }[]
+    overlays: {
+      name: string
+      position: [number, number]
+      scale: number
+      behind: boolean
+      iconFile?: string
+    }[]
     hidden: string[]
   }
 }
@@ -40,18 +61,19 @@ function baseLayout(baseScene: string): AttachmentOverlay[] {
 
 export function registerModAttachmentSubtypes(items: ModWeaponInput[]): void {
   for (const item of items) {
-    if (item.category !== 'Attachments' || !item.subtype) continue
-    if (KNOWN_SUBTYPES.has(item.subtype) && !ATTACHMENT_SUBTYPE.has(item.resourcePath)) {
-      ATTACHMENT_SUBTYPE.set(item.resourcePath, item.subtype as AttachmentSubtype)
+    if (item.category !== 'Attachments') continue
+    if (!ATTACHMENT_SUBTYPE.has(item.resourcePath)) {
+      ATTACHMENT_SUBTYPE.set(item.resourcePath, subtypeOf(item))
     }
   }
 }
 
 export function registerModWeaponLayouts(items: ModWeaponInput[]): void {
   for (const weapon of items) {
-    if (weapon.category !== 'Weapons' || !weapon.layout) continue
+    if (weapon.category !== 'Weapons') continue
+    if (!weapon.layout && !weapon.compatible?.length) continue
     if (WEAPON_ATTACHMENT_LAYOUTS.has(weapon.resourcePath)) continue
-    const { layout } = weapon
+    const layout = weapon.layout ?? { base: '', overlays: [], hidden: [] }
     const hidden = new Set(layout.hidden)
     const compatible = new Set(weapon.compatible ?? [])
 
@@ -67,18 +89,38 @@ export function registerModWeaponLayouts(items: ModWeaponInput[]): void {
         attachmentPath: target,
         position: overlay.position,
         scale: overlay.scale,
-        behind: overlay.behind
+        behind: overlay.behind,
+        ...(overlay.iconFile ? { iconFile: overlay.iconFile } : {})
       }
       const at = result.findIndex((o) => o.attachmentPath === target)
       if (at >= 0) result[at] = entry
       else result.push(entry)
     }
 
-    // When the weapon lists what it accepts, only those attachments are offered
-    const finalLayout =
-      compatible.size > 0
-        ? result.filter((o) => compatible.has(o.attachmentPath) || isMagazineAlias(o, compatible))
-        : result
+    // When the weapon lists what it accepts, only those attachments are offered; accepted
+    // attachments the scene places nowhere stay selectable (just not drawn on the icon)
+    let finalLayout = result
+    if (compatible.size > 0) {
+      finalLayout = result.filter(
+        (o) => compatible.has(o.attachmentPath) || isMagazineAlias(o, compatible)
+      )
+      for (const path of compatible) {
+        if (
+          finalLayout.some(
+            (o) => o.attachmentPath === path || stemOf(o.attachmentPath) === stemOf(path)
+          )
+        )
+          continue
+        const subtype = ATTACHMENT_SUBTYPE.get(path)
+        if (!subtype || !ITEMS_BY_PATH.has(path)) continue
+        finalLayout.push({
+          attachmentPath: path,
+          position: DEFAULT_DOT[subtype] ?? [0, 0],
+          scale: 0.5,
+          noOverlay: true
+        })
+      }
+    }
     if (finalLayout.length > 0) WEAPON_ATTACHMENT_LAYOUTS.set(weapon.resourcePath, finalLayout)
   }
 }

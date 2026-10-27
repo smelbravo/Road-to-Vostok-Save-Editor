@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { Copy, Hammer, ShieldX, Trash2, Unplug, Wrench } from 'lucide-vue-next'
+import { ArrowDownToLine, Copy, Hammer, ShieldX, Trash2, Unplug, Wrench } from 'lucide-vue-next'
 import type { AttachmentRemoveOption } from '../lib/types'
 
 withDefaults(
@@ -13,6 +13,8 @@ withDefaults(
     removeAttachmentOptions?: AttachmentRemoveOption[]
     showFullCondition?: boolean
     canDuplicate?: boolean
+    showDuplicate?: boolean
+    showToInventory?: boolean
   }>(),
   {
     showEditLoadout: false,
@@ -20,12 +22,15 @@ withDefaults(
     removePlateLabel: '',
     removeAttachmentOptions: () => [],
     showFullCondition: false,
-    canDuplicate: true
+    canDuplicate: true,
+    showDuplicate: true,
+    showToInventory: false
   }
 )
 
 const emit = defineEmits<{
   duplicate: []
+  toInventory: []
   delete: []
   editLoadout: []
   removePlate: []
@@ -98,6 +103,15 @@ onUnmounted(() => {
         {{ option.label }}
       </button>
       <button
+        v-if="showToInventory"
+        class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+        @click="emit('toInventory')"
+      >
+        <ArrowDownToLine class="h-3.5 w-3.5" />
+        Move to inventory
+      </button>
+      <button
+        v-if="showDuplicate"
         class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-inherit"
         :disabled="!canDuplicate"
         :title="canDuplicate ? undefined : 'Cannot duplicate modded items'"

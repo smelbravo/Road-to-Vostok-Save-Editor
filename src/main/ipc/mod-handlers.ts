@@ -7,7 +7,7 @@ import { open, mkdir, writeFile, stat, readdir } from 'fs/promises'
 import { getSaveDir } from './save-handlers'
 import { scanGameItems, scanGameTasks } from '../game-items'
 import { listPckEntries, decodeCtex, decodeDxt5, encodePng, getCacheDir } from '../icon-extractor'
-import { imageFromRsrc, toRgba } from '../rsrc-image'
+import { imageFromRsrc, toRgba, decodeDxt1 } from '../rsrc-image'
 
 /**
  * Pulls the embedded image out of a Godot 4 .ctex. Lossless/lossy textures keep a normal
@@ -45,6 +45,7 @@ async function storeModIcon(key: string, ext: string, data: Buffer): Promise<tru
       if (typeof img === 'string') return img
       let rgba = toRgba(img)
       if (!rgba && img.format === 'DXT5') rgba = decodeDxt5(img.data, img.width, img.height)
+      if (!rgba && img.format === 'DXT1') rgba = decodeDxt1(img.data, img.width, img.height)
       if (!rgba) return `unsupported image format ${img.format}`
       out = encodePng(rgba, img.width, img.height)
     } else return `unsupported icon format .${ext}`

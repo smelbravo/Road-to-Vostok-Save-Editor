@@ -281,5 +281,36 @@ check(
   JSON.stringify(r2.items[0])
 )
 
+// --- compressed resource wrapper (RSCC) ---
+{
+  const { unpackRscc } = await import('../src/main/rsrc')
+  const { deflateSync } = await import('zlib')
+  const plain = Buffer.from('hello hello hello hello, RSCC test data '.repeat(200))
+  const bs = 4096
+  const blocks: Buffer[] = []
+  for (let o = 0; o < plain.length; o += bs) blocks.push(deflateSync(plain.subarray(o, o + bs)))
+  const nb = Math.floor(plain.length / bs) + 1
+  const head = Buffer.alloc(16 + nb * 4)
+  head.write('RSCC', 0, 'latin1')
+  head.writeUInt32LE(1, 4)
+  head.writeUInt32LE(bs, 8)
+  head.writeUInt32LE(plain.length, 12)
+  blocks.forEach((b, i) => head.writeUInt32LE(b.length, 16 + i * 4))
+  const packed = Buffer.concat([head, ...blocks])
+  check('RSCC deflate unwrap', unpackRscc(packed).equals(plain))
+  // fastlz: one literal run of 5 bytes (ctrl 4) then a match (len 3+4, distance 5)
+  const lit = Buffer.from([4, 1, 2, 3, 4, 5])
+  const h2 = Buffer.alloc(16 + 4)
+  h2.write('RSCC', 0, 'latin1')
+  h2.writeUInt32LE(0, 4)
+  h2.writeUInt32LE(4096, 8)
+  h2.writeUInt32LE(5, 12)
+  h2.writeUInt32LE(lit.length, 16)
+  check(
+    'RSCC fastlz literals',
+    unpackRscc(Buffer.concat([h2, lit])).equals(Buffer.from([1, 2, 3, 4, 5]))
+  )
+}
+
 console.log(failures === 0 ? '\nall passed' : `\n${failures} failed`)
 process.exit(failures === 0 ? 0 : 1)

@@ -78,7 +78,14 @@ declare global {
     /** Weapons: attachment overlays of the inventory icon (from the mod's `tetris` scene) */
     layout?: {
       base: string
-      overlays: { name: string; position: [number, number]; scale: number; behind: boolean }[]
+      overlays: {
+        name: string
+        position: [number, number]
+        scale: number
+        behind: boolean
+        /** Icon cache key of the sprite's own texture */
+        iconFile?: string
+      }[]
       hidden: string[]
     }
     /** Icon cache key (extracted from the mod or the game files) */

@@ -1,4 +1,4 @@
-import { parseRsrc, type RsrcValue } from './rsrc'
+import { parseRsrc, magicOf, type RsrcValue } from './rsrc'
 
 /**
  * Pulls the pixels out of a binary `.res` texture (ImageTexture / Image), which is how some mods
@@ -19,14 +19,15 @@ const isDict = (v: RsrcValue | undefined): v is { dict: Record<string, RsrcValue
 
 export function imageFromRsrc(buf: Buffer): RsrcImage | string {
   const res = parseRsrc(buf)
-  if (!res) return 'not a Godot binary resource'
+  if (!res) return `not a Godot binary resource (file starts with ${magicOf(buf)})`
   // The dictionary lives on an Image sub-resource (ImageTexture -> image), or on the main one.
   const holders = [
     ...res.subResources.filter((s) => s.type === 'Image').map((s) => s.props),
     ...(res.type === 'Image' ? [res.props] : [])
   ]
   const dict = holders.map((p) => p.get('data')).find(isDict)?.dict
-  if (!dict) return `no image data in ${res.type || 'resource'}`
+  if (!dict)
+    return `no image data in ${res.type || 'resource'}${res.failure ? ` (${res.failure})` : ''}`
   const width = Number(dict.width)
   const height = Number(dict.height)
   const format = String(dict.format ?? '')
@@ -73,4 +74,49 @@ export function toRgba(img: RsrcImage): Uint8Array | null {
     default:
       return null
   }
+}
+
+/** DXT1 (BC1) to RGBA8; the first mip level only */
+export function decodeDxt1(data: Buffer, width: number, height: number): Uint8Array | null {
+  const bx = Math.ceil(width / 4)
+  const by = Math.ceil(height / 4)
+  if (data.length < bx * by * 8) return null
+  const out = new Uint8Array(width * height * 4)
+  const expand = (c: number): [number, number, number] => [
+    ((c >> 11) & 31) * 8 + ((c >> 13) & 7),
+    ((c >> 5) & 63) * 4 + ((c >> 9) & 3),
+    (c & 31) * 8 + ((c >> 2) & 7)
+  ]
+  for (let y = 0; y < by; y++) {
+    for (let x = 0; x < bx; x++) {
+      const o = (y * bx + x) * 8
+      const c0 = data.readUInt16LE(o)
+      const c1 = data.readUInt16LE(o + 2)
+      const a = expand(c0)
+      const b = expand(c1)
+      const pal: number[][] = [
+        [...a, 255],
+        [...b, 255],
+        c0 > c1
+          ? [(2 * a[0] + b[0]) / 3, (2 * a[1] + b[1]) / 3, (2 * a[2] + b[2]) / 3, 255]
+          : [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2, 255],
+        c0 > c1
+          ? [(a[0] + 2 * b[0]) / 3, (a[1] + 2 * b[1]) / 3, (a[2] + 2 * b[2]) / 3, 255]
+          : [0, 0, 0, 0]
+      ]
+      const bits = data.readUInt32LE(o + 4)
+      for (let i = 0; i < 16; i++) {
+        const px = x * 4 + (i & 3)
+        const py = y * 4 + (i >> 2)
+        if (px >= width || py >= height) continue
+        const p = pal[(bits >> (i * 2)) & 3]
+        const at = (py * width + px) * 4
+        out[at] = p[0]
+        out[at + 1] = p[1]
+        out[at + 2] = p[2]
+        out[at + 3] = p[3]
+      }
+    }
+  }
+  return out
 }

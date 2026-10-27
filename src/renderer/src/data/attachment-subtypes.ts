@@ -1,7 +1,7 @@
 import { WEAPON_ATTACHMENT_LAYOUTS } from './weapon-attachments'
 import { ITEMS_BY_PATH } from './items'
 
-export type AttachmentSubtype = 'Optic' | 'Muzzle' | 'Laser' | 'Magazine'
+export type AttachmentSubtype = 'Optic' | 'Muzzle' | 'Laser' | 'Magazine' | 'Camo' | 'Other'
 
 /** Maps attachment resource path to its subtype. Derived from game ItemData.subtype fields. */
 export const ATTACHMENT_SUBTYPE = new Map<string, AttachmentSubtype>([
@@ -91,7 +91,7 @@ export interface AttachmentOption {
   displayName: string
 }
 
-const SUBTYPE_ORDER: AttachmentSubtype[] = ['Magazine', 'Optic', 'Muzzle', 'Laser']
+const SUBTYPE_ORDER: AttachmentSubtype[] = ['Magazine', 'Optic', 'Muzzle', 'Laser', 'Camo', 'Other']
 
 /**
  * Returns compatible attachments for a weapon, grouped by subtype.

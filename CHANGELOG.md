@@ -11,6 +11,10 @@
 
 ### Fixes
 
+- Modded weapons: attachments the mod lists as compatible are always selectable in the workbench and in the right-click menu, even when the weapon's scene gives them no position; attachment sprites use the mod's own texture, so magazines and optics look like they do in game. Camo-type attachments get their own slot.
+- Gear Storage: right-click an item for Edit Loadout / Edit Armor, Remove attachment, Move to inventory and Delete, like in the inventory.
+- Icons: compressed (RSCC) and DXT1 `.res` textures are read; the icon diagnostics in Settings now show the real reason and the icon path.
+
 - Modded weapons now show their equipped attachments on the icon (inventory, equipment and Gear Storage) and can be edited in the weapon workbench: the editor reads each weapon's `compatible` list and inventory scene from the mod.
 - Gear Storage draws weapons with their attachments like the inventory does.
 

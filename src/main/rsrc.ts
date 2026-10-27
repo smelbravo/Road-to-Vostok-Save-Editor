@@ -1,3 +1,5 @@
+import * as zlib from 'zlib'
+import { inflateSync, gunzipSync } from 'zlib'
 /**
  * Strict reader for Godot 4 binary resources (`RSRC`, `.res`). It was written from the engine's
  * documented layout and is deliberately defensive: anything it does not understand makes it stop
@@ -73,6 +75,8 @@ export interface RsrcResource {
   complete: boolean
   /** Every internal (sub) resource in file order; `{ref:'local:N'}` values point into this list */
   subResources: { type: string; props: Map<string, RsrcValue> }[]
+  /** Why reading stopped early, when it did */
+  failure?: string
 }
 
 // Variant ids of Godot's binary resource format (resource_format_binary.cpp)
@@ -101,12 +105,99 @@ const V = {
 
 class Unsupported extends Error {}
 
+const fail = (e: unknown): string => (e instanceof Error ? e.message : 'unreadable')
+
 export function parseRsrc(buf: Buffer): RsrcResource | null {
   try {
-    return parseRsrcInner(buf)
+    return parseRsrcInner(unpackRscc(buf))
   } catch {
     return null
   }
+}
+
+/** First bytes of a file, printable, for diagnostics ("RSRC", "GDST", ...) */
+export function magicOf(buf: Buffer): string {
+  return JSON.stringify(buf.toString('latin1', 0, 4).replace(/[^\x20-\x7e]/g, '.'))
+}
+
+function fastlzDecompress(src: Buffer, outSize: number): Buffer {
+  const out = Buffer.alloc(outSize)
+  const level = (src[0] >> 5) + 1
+  let ip = 0
+  let op = 0
+  let ctrl = src[ip++] & 31
+  for (;;) {
+    if (ctrl >= 32) {
+      let len = (ctrl >> 5) - 1
+      let ofs = (ctrl & 31) << 8
+      let ref = op - ofs - 1
+      if (level === 1) {
+        if (len === 6) len += src[ip++]
+        ref -= src[ip++]
+      } else {
+        if (len === 6) {
+          let code: number
+          do {
+            code = src[ip++]
+            len += code
+          } while (code === 255)
+        }
+        const code = src[ip++]
+        ref -= code
+        if (code === 255 && ofs === 31 << 8) {
+          ofs = src[ip++] << 8
+          ofs += src[ip++]
+          ref = op - ofs - 8191
+        }
+      }
+      len += 3
+      if (ref < 0 || op + len > outSize) throw new Unsupported('corrupt compressed data')
+      for (let i = 0; i < len; i++) out[op++] = out[ref++]
+    } else {
+      ctrl++
+      if (op + ctrl > outSize || ip + ctrl > src.length)
+        throw new Unsupported('corrupt compressed data')
+      src.copy(out, op, ip, ip + ctrl)
+      op += ctrl
+      ip += ctrl
+    }
+    if (ip >= src.length) break
+    ctrl = src[ip++]
+  }
+  return out
+}
+
+/** Godot's compressed resource wrapper ("RSCC": mode, block size, total size, block table, blocks) */
+export function unpackRscc(buf: Buffer): Buffer {
+  if (buf.length < 16 || buf.toString('latin1', 0, 4) !== 'RSCC') return buf
+  const mode = buf.readUInt32LE(4)
+  const blockSize = buf.readUInt32LE(8)
+  const total = buf.readUInt32LE(12)
+  if (!blockSize || total > 1 << 28) throw new Unsupported('bad compressed header')
+  const blocks = Math.floor(total / blockSize) + 1
+  let pos = 16 + blocks * 4
+  const parts: Buffer[] = []
+  let done = 0
+  for (let i = 0; i < blocks; i++) {
+    const csize = buf.readUInt32LE(16 + i * 4)
+    const want = Math.min(blockSize, total - done)
+    if (want <= 0) break
+    const chunk = buf.subarray(pos, pos + csize)
+    pos += csize
+    let plain: Buffer
+    if (mode === 0) plain = fastlzDecompress(chunk, want)
+    else if (mode === 1) plain = inflateSync(chunk)
+    else if (mode === 3) plain = gunzipSync(chunk)
+    else if (mode === 2) {
+      const zstd = (zlib as unknown as { zstdDecompressSync?: (b: Buffer) => Buffer })
+        .zstdDecompressSync
+      if (!zstd) throw new Unsupported('zstd compressed resource needs a newer runtime')
+      plain = zstd(chunk)
+    } else throw new Unsupported(`unknown compression ${mode}`)
+    parts.push(plain)
+    done += plain.length
+  }
+  return Buffer.concat(parts)
 }
 
 function parseRsrcInner(buf: Buffer): RsrcResource | null {
@@ -234,7 +325,7 @@ function parseRsrcInner(buf: Buffer): RsrcResource | null {
         throw new Unsupported()
       }
       default:
-        throw new Unsupported()
+        throw new Unsupported(`unsupported value type ${t}`)
     }
   }
   const skipNodePath = (): string => {
@@ -252,6 +343,7 @@ function parseRsrcInner(buf: Buffer): RsrcResource | null {
   let mainType = ''
   let mainProps = new Map<string, RsrcValue>()
   let complete = true
+  let failure: string | undefined
   for (let idx = 0; idx < offsets.length; idx++) {
     const props = new Map<string, RsrcValue>()
     let ok = true
@@ -266,8 +358,9 @@ function parseRsrcInner(buf: Buffer): RsrcResource | null {
         if (name === undefined) throw new Unsupported()
         props.set(name, readVariant())
       }
-    } catch {
+    } catch (e) {
       ok = false
+      failure ??= fail(e)
     }
     if (idx === offsets.length - 1) {
       mainType = resType
@@ -277,5 +370,5 @@ function parseRsrcInner(buf: Buffer): RsrcResource | null {
       subResources.push({ type: resType, props })
     }
   }
-  return { type: mainType || type, scriptClass, props: mainProps, complete, subResources }
+  return { type: mainType || type, scriptClass, props: mainProps, complete, subResources, failure }
 }

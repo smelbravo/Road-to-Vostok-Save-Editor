@@ -21,6 +21,10 @@ import type { SlotItem } from '../lib/types'
 import ItemIcon from './ItemIcon.vue'
 import CompositeIcon from './CompositeIcon.vue'
 import StorageAddDialog from './StorageAddDialog.vue'
+import ItemContextMenu from './ItemContextMenu.vue'
+import { setWeaponNested } from '../composables/useWeaponAttachments'
+import { ATTACHMENT_SUBTYPE } from '../data/attachment-subtypes'
+import type { AttachmentRemoveOption } from '../lib/types'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Input } from '../components/ui/input'
@@ -152,10 +156,50 @@ const canEditLoadout = computed(() => {
   return !!item && item.category === 'Weapons' && WEAPON_ATTACHMENT_LAYOUTS.has(item.itemPath)
 })
 const canEditArmor = computed(() => !!selected.value?.entry.item.carrier)
-const moddedWeapon = computed(() => {
+
+const menu = ref<{ x: number; y: number } | null>(null)
+
+function onContextMenu(event: MouseEvent, entry: StoredEntry): void {
+  selectedId.value = entry.id
+  menu.value = { x: event.clientX, y: event.clientY }
+}
+
+const removeOptions = computed<AttachmentRemoveOption[]>(() => {
   const item = selected.value?.entry.item
-  return !!item && item.category === 'Weapons' && !canEditLoadout.value
+  if (!item || item.category !== 'Weapons') return []
+  return item.nested
+    .filter((path) => ATTACHMENT_SUBTYPE.has(path))
+    .map((path) => ({
+      path,
+      label: `Remove ${ITEMS_BY_PATH.get(path)?.displayName ?? path.split('/').pop()?.replace('.tres', '') ?? 'attachment'}`
+    }))
 })
+
+function removeAttachment(path: string): void {
+  const item = selected.value?.entry.item
+  if (item)
+    setWeaponNested(
+      item.subResourceId,
+      item.nested.filter((p) => p !== path)
+    )
+  menu.value = null
+}
+
+function menuEdit(): void {
+  if (canEditArmor.value) editArmor()
+  else editLoadout()
+  menu.value = null
+}
+
+function menuToInventory(): void {
+  toInventory()
+  menu.value = null
+}
+
+function menuDelete(): void {
+  remove()
+  menu.value = null
+}
 
 function editLoadout(): void {
   if (selected.value && openWorkbench) openWorkbench(selected.value.entry.item)
@@ -312,6 +356,7 @@ const statusLine = computed(() => {
                 @dragend="onDragEnd"
                 :title="`${entry.item.itemName}${entry.problem ? '\n' + entry.problem : ''}`"
                 @click="selectedId = entry.id"
+                @contextmenu.prevent="onContextMenu($event, entry)"
               >
                 <CompositeIcon
                   v-if="iconOf(entry.item.itemPath)"
@@ -360,10 +405,6 @@ const statusLine = computed(() => {
         <p v-if="selected.entry.problem" class="text-xs text-yellow-400 flex items-start gap-1.5">
           <TriangleAlert class="h-3.5 w-3.5 shrink-0 mt-px" />
           {{ selected.entry.problem }}
-        </p>
-        <p v-if="moddedWeapon" class="text-xs text-muted-foreground">
-          The attachments of this weapon cannot be edited here: the editor does not know which
-          attachments fit it (same limit as the inventory loadout editor).
         </p>
         <div class="flex flex-wrap items-center gap-3">
           <div v-if="selectedFields?.condition" class="flex items-center gap-1.5">
@@ -418,6 +459,22 @@ const statusLine = computed(() => {
         </div>
       </div>
     </div>
+
+    <ItemContextMenu
+      v-if="menu && selected"
+      :x="menu.x"
+      :y="menu.y"
+      :show-edit-loadout="canEditLoadout || canEditArmor"
+      :edit-loadout-label="canEditArmor ? 'Edit Armor' : 'Edit Loadout'"
+      :remove-attachment-options="removeOptions"
+      :show-duplicate="false"
+      show-to-inventory
+      @edit-loadout="menuEdit"
+      @remove-attachment="removeAttachment"
+      @to-inventory="menuToInventory"
+      @delete="menuDelete"
+      @close="menu = null"
+    />
 
     <StorageAddDialog
       v-model:open="dialogOpen"

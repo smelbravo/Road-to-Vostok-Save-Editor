@@ -9,6 +9,10 @@ export interface AttachmentOverlay {
   rotation?: number
   /** Render behind the weapon icon */
   behind?: boolean
+  /** Icon cache key of the sprite's own texture, when it is not the attachment's inventory icon */
+  iconFile?: string
+  /** Selectable in the workbench but not drawn (position unknown or no sprite) */
+  noOverlay?: boolean
 }
 
 /** Attachment overlay positions per weapon, keyed by weapon resource path */

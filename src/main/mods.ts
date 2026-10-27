@@ -66,6 +66,10 @@ export interface ModLayoutOverlay {
   position: [number, number]
   scale: number
   behind: boolean
+  /** res:// path of the sprite's own texture (often differs from the attachment's inventory icon) */
+  texture?: string
+  /** Icon cache key once the texture was extracted */
+  iconFile?: string
 }
 
 export interface ModLayout {
@@ -355,11 +359,14 @@ export function parseTetrisScene(text: string): ModLayout | null {
     // A visible-by-default Sprite2D, or an inherited node given a new position
     if (!position) continue
     const scale = vec(props.scale)
+    const texId = /^ExtResource\(\s*"?([^")]+)"?\s*\)$/.exec(props.texture ?? '')?.[1]
+    const texture = texId ? ext.get(texId) : undefined
     overlays.push({
       name,
       position,
       scale: scale ? scale[0] : 1,
-      behind: props.show_behind_parent === 'true'
+      behind: props.show_behind_parent === 'true',
+      ...(texture ? { texture } : {})
     })
   }
   return { base, overlays, hidden }
@@ -385,18 +392,46 @@ async function extractItemIcon(
   sink: IconSink
 ): Promise<void> {
   if (!item.iconPath) {
-    item.iconProblem = 'item has no icon property'
-    return
+    // No icon property (some mods load it from a script): look for an icon file next to the item
+    const dir = item.resourcePath
+      .replace(/^res:\/\//, '')
+      .replace(/[^/]*$/, '')
+      .toLowerCase()
+    const near = entries.filter((e) => {
+      const n = e.name.toLowerCase()
+      const file = n.split('/').pop() ?? ''
+      return n.startsWith(dir) && /^icon[^/]*\.(png|webp|jpe?g|res)$/.test(file)
+    })
+    const pick =
+      near.length === 1
+        ? near[0]
+        : near.filter((e) => e.name.toLowerCase().includes(item.id.toLowerCase())).at(0)
+    if (!pick || !dir) {
+      item.iconProblem = 'item has no icon property'
+      return
+    }
+    item.iconPath = 'res://' + pick.name
   }
-  const want = item.iconPath.replace(/^res:\/\//, '').toLowerCase()
+  const r = await extractIconPath(buf, entries, item.iconPath, item.modId, sink)
+  if ('key' in r) item.iconFile = r.key
+  else item.iconProblem = r.problem
+}
+
+/** Finds the image a `res://` path names inside the archive and hands it to the sink. */
+async function extractIconPath(
+  buf: ZipInput,
+  entries: ZipEntry[],
+  iconPath: string,
+  modId: string,
+  sink: IconSink
+): Promise<{ key: string } | { problem: string }> {
+  const want = iconPath.replace(/^res:\/\//, '').toLowerCase()
   const find = (name: string): ZipEntry | undefined =>
     entries.find((e) => e.name.toLowerCase() === name)
-  const stem = (item.iconPath.split('/').pop() ?? 'icon').replace(/\.[^.]+$/, '')
-  const key = `mod_${safeKey(item.modId)}_${safeKey(stem)}`
-  const done = (r: true | string): void => {
-    if (r === true) item.iconFile = key
-    else item.iconProblem = r
-  }
+  const stem = (iconPath.split('/').pop() ?? 'icon').replace(/\.[^.]+$/, '')
+  const key = `mod_${safeKey(modId)}_${safeKey(stem)}`
+  const done = (r: true | string): { key: string } | { problem: string } =>
+    r === true ? { key } : { problem: r }
   // Some archives keep the file under another folder than the one the item names; fall back to
   // the file name when it is unique inside the archive.
   const baseName = want.split('/').pop() ?? want
@@ -408,8 +443,7 @@ async function extractItemIcon(
     direct.size < 16 * 1024 * 1024 &&
     ['png', 'jpg', 'jpeg', 'webp', 'res'].includes(ext)
   ) {
-    done(await sink(key, ext, await readZipEntry(buf, direct)))
-    return
+    return done(await sink(key, ext, await readZipEntry(buf, direct)))
   }
   // Imported texture: <icon>.import names the .ctex that holds the pixels
   const imp = find(want + '.import')
@@ -419,27 +453,23 @@ async function extractItemIcon(
     )?.[1]
     const ctex = target ? find(target.toLowerCase()) : undefined
     if (ctex && ctex.size < 16 * 1024 * 1024) {
-      done(await sink(key, 'ctex', await readZipEntry(buf, ctex)))
-      return
+      return done(await sink(key, 'ctex', await readZipEntry(buf, ctex)))
     }
-    item.iconProblem = 'imported texture (.ctex) not in archive'
-    return
+    return { problem: 'imported texture (.ctex) not in archive' }
   }
   // Last resort: any imported texture that belongs to this image
-  const base = (item.iconPath.split('/').pop() ?? '').toLowerCase()
-  const loose = base
+  const loose = baseName
     ? entries.find((e) => {
         const n = e.name.toLowerCase()
-        return n.endsWith('.ctex') && n.includes(base)
+        return n.endsWith('.ctex') && n.includes(baseName)
       })
     : undefined
   if (loose && loose.size < 16 * 1024 * 1024) {
-    done(await sink(key, 'ctex', await readZipEntry(buf, loose)))
-    return
+    return done(await sink(key, 'ctex', await readZipEntry(buf, loose)))
   }
-  item.iconProblem = direct
-    ? `unsupported icon format .${ext}`
-    : 'icon file not found in the mod archive'
+  return {
+    problem: direct ? `unsupported icon format .${ext}` : 'icon file not found in the mod archive'
+  }
 }
 
 export async function scanModArchive(
@@ -493,6 +523,15 @@ export async function scanModArchive(
         await extractItemIcon(buf, entries, item, onIcon)
       } catch {
         // a broken icon must not hide the item
+      }
+      for (const overlay of item.layout?.overlays ?? []) {
+        if (!overlay.texture) continue
+        try {
+          const r = await extractIconPath(buf, entries, overlay.texture, mod.id, onIcon)
+          if ('key' in r) overlay.iconFile = r.key
+        } catch {
+          // the overlay falls back to the attachment's own icon
+        }
       }
     }
   }
@@ -566,7 +605,10 @@ export async function scanMods(opts: ScanOptions): Promise<Omit<ModScan, 'modsDi
     if (!item.iconProblem) continue
     const entry = problems.get(item.iconProblem) ?? { count: 0, examples: [] }
     entry.count++
-    if (entry.examples.length < 4) entry.examples.push(`${item.modId}: ${item.id}`)
+    if (entry.examples.length < 4)
+      entry.examples.push(
+        `${item.modId}: ${item.id}${item.iconPath ? ` (${item.iconPath.replace(/^res:\/\//, '')})` : ''}`
+      )
     problems.set(item.iconProblem, entry)
   }
   result.iconProblems = [...problems].map(([reason, v]) => ({ reason, ...v }))

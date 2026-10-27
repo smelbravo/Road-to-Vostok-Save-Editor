@@ -50,5 +50,13 @@ check(
   'slots: Magazine/Optic/Muzzle',
   ['Magazine', 'Optic', 'Muzzle'].every((k) => slots.has(k as never))
 )
+check(
+  'camo selectable (not drawn)',
+  !!layout?.find((o) => o.attachmentPath.endsWith('SV98_Camo.tres'))?.noOverlay
+)
+check(
+  'mod mag keeps its overlay',
+  !layout?.find((o) => o.attachmentPath.endsWith('SV98_Magazine.tres'))?.noOverlay
+)
 console.log(names.join(', '))
 process.exit(fails ? 1 : 0)
