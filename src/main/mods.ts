@@ -50,6 +50,30 @@ export interface ModItem {
   iconFile?: string
   /** Why no icon could be extracted (diagnostics) */
   iconProblem?: string
+  /** ItemData.subtype ("Optic", "Muzzle", "Magazine", "Rifle", ...) */
+  subtype?: string
+  /** Weapons: resource paths of the attachments the item lists as `compatible` */
+  compatible?: string[]
+  /** Weapons: res:// path of the inventory scene (`tetris`) */
+  tetrisPath?: string
+  /** Weapons: how attachments are drawn on the icon, read from the `tetris` scene */
+  layout?: ModLayout
+}
+
+export interface ModLayoutOverlay {
+  /** Node name in the scene; matches the attachment's `file` (e.g. "SV98_Scope", "ACOG") */
+  name: string
+  position: [number, number]
+  scale: number
+  behind: boolean
+}
+
+export interface ModLayout {
+  /** res:// path of the scene the weapon's scene inherits from (e.g. SVD_8x2.tscn) */
+  base: string
+  overlays: ModLayoutOverlay[]
+  /** Inherited nodes the scene hides (e.g. the borrowed weapon's own magazine) */
+  hidden: string[]
 }
 
 export interface ModScan {
@@ -245,17 +269,17 @@ export function parseItemTres(text: string, resourcePath: string, modId: string)
   if (!name || !type) return null
   const size = /^Vector2\(\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/.exec(props.size ?? '')
   const slots = [...(props.slots ?? '').matchAll(/"([^"]+)"/g)].map((m) => m[1])
-  const iconId = /^ExtResource\(\s*"?([^")]+)"?\s*\)$/.exec(props.icon ?? '')?.[1]
-  let iconPath = ''
-  if (iconId) {
-    for (const m of text.matchAll(/^\[ext_resource\s+([^\]]*)\]/gm)) {
-      const attrs = m[1]
-      if (new RegExp(`\\bid="${iconId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`).test(attrs)) {
-        iconPath = /\bpath="([^"]+)"/.exec(attrs)?.[1] ?? ''
-        break
-      }
-    }
+  const extPaths = extResourcePaths(text)
+  const refPath = (raw: string | undefined): string => {
+    const id = /^ExtResource\(\s*"?([^")]+)"?\s*\)$/.exec(raw ?? '')?.[1]
+    return (id && extPaths.get(id)) || ''
   }
+  const iconPath = refPath(props.icon)
+  const subtype = unquote(props.subtype)
+  const compatible = [...(props.compatible ?? '').matchAll(/ExtResource\(\s*"?([^")]+)"?\s*\)/g)]
+    .map((m) => extPaths.get(m[1]) ?? '')
+    .filter((p) => p.endsWith('.tres'))
+  const tetrisPath = refPath(props.tetris)
   const file = unquote(props.file) || (resourcePath.split('/').pop() ?? '').replace(/\.tres$/, '')
   const num = (raw: string | undefined): number => {
     const n = Number(raw)
@@ -275,8 +299,70 @@ export function parseItemTres(text: string, resourcePath: string, modId: string)
     showCondition: props.showCondition === 'true',
     slots,
     modId,
-    iconPath
+    iconPath,
+    ...(subtype ? { subtype } : {}),
+    ...(compatible.length > 0 ? { compatible } : {}),
+    ...(tetrisPath ? { tetrisPath } : {})
   }
+}
+
+/** `id` -> `path` of every [ext_resource] in a .tres / .tscn */
+function extResourcePaths(text: string): Map<string, string> {
+  const out = new Map<string, string>()
+  for (const m of text.matchAll(/^\[ext_resource\s+([^\]]*)\]/gm)) {
+    const id = /\bid="([^"]+)"/.exec(m[1])?.[1]
+    const path = /\bpath="([^"]+)"/.exec(m[1])?.[1]
+    if (id && path) out.set(id, path)
+  }
+  return out
+}
+
+/**
+ * Reads the inventory scene of a weapon (its `tetris` .tscn): the Sprite2D children are the
+ * attachments drawn on the icon, with their position and scale. Nodes without a type override
+ * an inherited node; only their visibility matters here.
+ */
+export function parseTetrisScene(text: string): ModLayout | null {
+  const ext = extResourcePaths(text)
+  const blocks = text.split(/^(?=\[node )/m).filter((b) => b.startsWith('[node '))
+  if (blocks.length === 0) return null
+  let base = ''
+  const overlays: ModLayoutOverlay[] = []
+  const hidden: string[] = []
+  const vec = (raw: string | undefined): [number, number] | null => {
+    const m = /^Vector2\(\s*(-?[\d.e+-]+)\s*,\s*(-?[\d.e+-]+)\s*\)$/.exec((raw ?? '').trim())
+    return m ? [parseFloat(m[1]), parseFloat(m[2])] : null
+  }
+  for (const block of blocks) {
+    const lines = block.split(/\r?\n/)
+    const head = lines[0]
+    const name = /\bname="([^"]+)"/.exec(head)?.[1]
+    const parent = /\bparent="([^"]*)"/.exec(head)?.[1]
+    if (!name) continue
+    const props: Record<string, string> = {}
+    for (const line of lines.slice(1)) {
+      const eq = line.indexOf('=')
+      if (eq > 0) props[line.slice(0, eq).trim()] = line.slice(eq + 1).trim()
+    }
+    if (parent === undefined) {
+      const inst = /\binstance=ExtResource\(\s*"?([^")]+)"?\s*\)/.exec(head)?.[1]
+      base = (inst && ext.get(inst)) || ''
+      continue
+    }
+    if (parent !== '.') continue
+    if (props.visible === 'false' && !/\btype="/.test(head)) hidden.push(name)
+    const position = vec(props.position)
+    // A visible-by-default Sprite2D, or an inherited node given a new position
+    if (!position) continue
+    const scale = vec(props.scale)
+    overlays.push({
+      name,
+      position,
+      scale: scale ? scale[0] : 1,
+      behind: props.show_behind_parent === 'true'
+    })
+  }
+  return { base, overlays, hidden }
 }
 
 // ---------------------------------------------------------------------------
@@ -384,6 +470,21 @@ export async function scanModArchive(
       if (item) items.push(item)
     } catch {
       // one unreadable resource must not hide the rest of the mod
+    }
+  }
+  for (const item of items) {
+    if (item.category !== 'Weapons' || !item.tetrisPath) continue
+    try {
+      const want = item.tetrisPath.replace(/^res:\/\//, '').toLowerCase()
+      const base = want.split('/').pop() ?? want
+      const same = entries.filter((e) => e.name.toLowerCase().split('/').pop() === base)
+      const hit =
+        entries.find((e) => e.name.toLowerCase() === want) ?? (same.length === 1 ? same[0] : null)
+      if (!hit || hit.size > MAX_TRES_BYTES) continue
+      const layout = parseTetrisScene((await readZipEntry(buf, hit)).toString('utf8'))
+      if (layout) item.layout = layout
+    } catch {
+      // binary scene or unreadable: the weapon just gets no attachment overlays
     }
   }
   if (onIcon) {

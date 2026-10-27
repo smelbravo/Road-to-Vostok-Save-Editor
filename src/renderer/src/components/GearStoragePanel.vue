@@ -19,6 +19,7 @@ import { isBox } from '../data/gse'
 import { WEAPON_ATTACHMENT_LAYOUTS } from '../data/weapon-attachments'
 import type { SlotItem } from '../lib/types'
 import ItemIcon from './ItemIcon.vue'
+import CompositeIcon from './CompositeIcon.vue'
 import StorageAddDialog from './StorageAddDialog.vue'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
@@ -312,10 +313,16 @@ const statusLine = computed(() => {
                 :title="`${entry.item.itemName}${entry.problem ? '\n' + entry.problem : ''}`"
                 @click="selectedId = entry.id"
               >
-                <ItemIcon
+                <CompositeIcon
                   v-if="iconOf(entry.item.itemPath)"
                   :icon-file="iconOf(entry.item.itemPath)"
-                  class="max-h-full max-w-full pointer-events-none"
+                  :item-path="entry.item.itemPath"
+                  :nested="entry.item.nested"
+                  :w="entry.w"
+                  :h="entry.h"
+                  :cell-size="CELL_UI"
+                  :rotated="entry.item.gridRotated"
+                  class="pointer-events-none"
                 />
                 <span v-else class="text-[10px] leading-tight text-center px-0.5 break-words">
                   {{ entry.item.nameInventory }}

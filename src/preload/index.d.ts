@@ -71,6 +71,16 @@ declare global {
     showCondition: boolean
     slots: string[]
     modId: string
+    /** ItemData.subtype */
+    subtype?: string
+    /** Weapons: attachments listed as compatible */
+    compatible?: string[]
+    /** Weapons: attachment overlays of the inventory icon (from the mod's `tetris` scene) */
+    layout?: {
+      base: string
+      overlays: { name: string; position: [number, number]; scale: number; behind: boolean }[]
+      hidden: string[]
+    }
     /** Icon cache key (extracted from the mod or the game files) */
     iconFile?: string
   }

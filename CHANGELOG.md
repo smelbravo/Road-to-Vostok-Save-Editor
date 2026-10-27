@@ -11,6 +11,9 @@
 
 ### Fixes
 
+- Modded weapons now show their equipped attachments on the icon (inventory, equipment and Gear Storage) and can be edited in the weapon workbench: the editor reads each weapon's `compatible` list and inventory scene from the mod.
+- Gear Storage draws weapons with their attachments like the inventory does.
+
 - Fixed the black Quests/Character/... tabs and the freezes when switching pages; save tabs now show the load error instead of an empty screen.
 - Mod, game-item and task scans are cached (Rescan in Settings forces a refresh) and zips are read as streams, so large mods no longer lag the app.
 - More modded item icons: binary `.res` textures and icons stored in a different folder inside the mod archive are now found.

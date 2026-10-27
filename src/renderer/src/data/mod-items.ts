@@ -1,6 +1,7 @@
 import { computed, shallowRef } from 'vue'
 import { ITEMS, ITEMS_BY_PATH, ITEMS_META, resolveItemMeta } from './items'
 import { ITEMS_BY_SLOT } from './equipment-slots'
+import { registerModAttachmentSubtypes, registerModWeaponLayouts } from './mod-layouts'
 import type { GameItem, ItemCategory } from '../lib/types'
 
 /**
@@ -72,6 +73,10 @@ export function registerModItems(found: ModItem[], fromGame = false): void {
       list.push(item)
       touched.add(list)
     }
+  }
+  if (!fromGame) {
+    registerModAttachmentSubtypes(found)
+    registerModWeaponLayouts(found)
   }
   for (const list of touched) list.sort((a, b) => a.displayName.localeCompare(b.displayName))
   if (added.length > 0) modItems.value = [...modItems.value, ...added]
