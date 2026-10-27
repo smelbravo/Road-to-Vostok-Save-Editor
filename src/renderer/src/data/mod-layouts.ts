@@ -20,11 +20,13 @@ const DEFAULT_DOT: Record<string, [number, number]> = {
   Laser: [150, -46],
   Magazine: [2, 34],
   Camo: [100, 70],
+  Bipod: [250, 40],
   Other: [200, 70]
 }
 
 function subtypeOf(item: { subtype?: string; resourcePath: string }): AttachmentSubtype {
   if (item.subtype && KNOWN_SUBTYPES.has(item.subtype)) return item.subtype as AttachmentSubtype
+  if (/bipod/i.test(`${item.subtype ?? ''} ${item.resourcePath}`)) return 'Bipod'
   return /camo|cover|skin/i.test(`${item.subtype ?? ''} ${item.resourcePath}`) ? 'Camo' : 'Other'
 }
 
