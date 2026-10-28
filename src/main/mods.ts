@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { open, readdir, readFile, stat } from 'fs/promises'
 import { join, extname } from 'path'
 import { inflateRaw } from 'zlib'
@@ -437,15 +438,33 @@ async function extractIconPath(
   const find = (name: string): ZipEntry | undefined =>
     entries.find((e) => e.name.toLowerCase() === name)
   const stem = (iconPath.split('/').pop() ?? 'icon').replace(/\.[^.]+$/, '')
-  const key = `mod_${safeKey(modId)}_${safeKey(stem)}`
+  // The folder is part of the key: many mods name every icon `Icon.res`
+  const key = `mod_${safeKey(modId)}_${safeKey(stem)}_${createHash('md5').update(want).digest('hex').slice(0, 8)}`
   const done = (r: true | string): { key: string } | { problem: string } =>
     r === true ? { key } : { problem: r }
   // Some archives keep the file under another folder than the one the item names; fall back to
   // the file name when it is unique inside the archive.
   const baseName = want.split('/').pop() ?? want
   const sameName = entries.filter((e) => e.name.toLowerCase().split('/').pop() === baseName)
-  const direct = find(want) ?? (sameName.length === 1 ? sameName[0] : undefined)
-  const ext = want.split('.').pop() ?? ''
+  // Still nothing: an image whose name carries the item's name (`G28_Scope` -> `Icon_G28_Scope.png`)
+  const wantStem = baseName.replace(/\.[^.]+$/, '')
+  const similar =
+    wantStem.length >= 4
+      ? entries.filter((e) => {
+          const n = e.name.toLowerCase()
+          const file = n.split('/').pop() ?? ''
+          return (
+            /\.(png|webp|jpe?g|res)$/.test(file) &&
+            file.replace(/\.[^.]+$/, '').includes(wantStem) &&
+            !/reticle|normal|albedo|rough|metal/.test(file)
+          )
+        })
+      : []
+  const direct =
+    find(want) ??
+    (sameName.length === 1 ? sameName[0] : undefined) ??
+    (similar.length === 1 ? similar[0] : undefined)
+  const ext = (direct ? direct.name.toLowerCase() : want).split('.').pop() ?? ''
   if (
     direct &&
     direct.size < 16 * 1024 * 1024 &&

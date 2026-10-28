@@ -12,6 +12,11 @@
 ### Fixes
 
 - Bipod attachments (G28) get their own slot in the weapon workbench.
+- Modded icons no longer overwrite each other: mods that name every icon `Icon.res` (NARK firearms and melee) now show the right icon per item (M45A1, Beretta 92FS, knives).
+- Equipped attachments the weapon layout does not list (e.g. a vanilla suppressor or scope on a modded rifle) always get a slot in Edit Loadout and are drawn where the weapon's other attachments of that kind go.
+- Edit Loadout slot buttons on the same edge no longer overlap.
+- Icons are also found when the file name only contains the item name (`Icon_G28_Scope.png` for `G28_Scope`).
+- Gear Storage no longer lists weapons lying in the inventory.
 
 - Icons stored as compressed `.res` textures (zstd, used by NARK's Karambit and others) and as portable textures with a lossless WebP/PNG inside (Green Swamp ghillie items) are now read.
 - G28-style weapons: attachments that are drawn as full-size layers over the weapon icon (scope, suppressor, bipod, camo) are shown on the icon and offered in the workbench, even when the weapon's `compatible` list only names the vanilla ones. Attachments can also claim a weapon from their own `compatible` list.

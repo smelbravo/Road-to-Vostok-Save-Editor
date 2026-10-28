@@ -148,6 +148,8 @@ export const storageContainers = computed<StorageContainer[]>(() => {
   for (const item of c.inventory) {
     // Gear lying in the inventory only shows up when something is stored in it.
     if (item.storage.length === 0) continue
+    // Weapons carry their attachments, they are edited in the inventory
+    if (ITEMS_BY_PATH.get(item.itemData)?.category === 'Weapons') continue
     const built = buildContainer(item, '')
     if (built) out.push(built)
   }

@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { setWeaponNested } from '../composables/useWeaponAttachments'
 import { useItemIcons } from '../composables/useItemIcons'
 import { ITEMS_BY_PATH, getItemSize } from '../data/items'
-import { WEAPON_ATTACHMENT_LAYOUTS } from '../data/weapon-attachments'
+import { ensureNestedLayout } from '../data/mod-layouts'
 import {
   getWeaponSlots,
   resolveItemPath,
@@ -49,6 +49,7 @@ watch(
 
 async function loadAllIcons() {
   if (iconStatus.value !== 'done' || !props.weapon) return
+  ensureNestedLayout(props.weapon.itemPath, props.weapon.nested)
   const allSlots = getWeaponSlots(props.weapon.itemPath)
   for (const [, options] of allSlots) {
     for (const opt of options) {
@@ -74,6 +75,7 @@ const areaScale = computed(() => Math.min(1, MAX_AREA_W / areaW.value))
 
 const slots = computed(() => {
   if (!props.weapon) return new Map<AttachmentSubtype, AttachmentOption[]>()
+  ensureNestedLayout(props.weapon.itemPath, props.weapon.nested)
   return getWeaponSlots(props.weapon.itemPath)
 })
 
@@ -89,8 +91,8 @@ interface SlotPosition {
 
 const slotPositions = computed<SlotPosition[]>(() => {
   if (!props.weapon) return []
-  const layouts = WEAPON_ATTACHMENT_LAYOUTS.get(props.weapon.itemPath)
-  if (!layouts) return []
+  const layouts = ensureNestedLayout(props.weapon.itemPath, props.weapon.nested)
+  if (layouts.length === 0) return []
 
   const factor = CELL_SIZE / 64
   const cx = areaW.value / 2
@@ -130,6 +132,18 @@ const slotPositions = computed<SlotPosition[]>(() => {
     }
 
     result.push({ subtype, ax, ay, bx, by })
+  }
+  // Buttons on the same edge must not sit on top of each other
+  const GAP = 54
+  const sides = new Map<number, SlotPosition[]>()
+  for (const r of result) sides.set(r.by, [...(sides.get(r.by) ?? []), r])
+  for (const row of sides.values()) {
+    row.sort((a, b) => a.bx - b.bx)
+    for (let i = 1; i < row.length; i++) {
+      if (row[i].bx - row[i - 1].bx < GAP) row[i].bx = row[i - 1].bx + GAP
+    }
+    const over = row[row.length - 1].bx - (areaW.value - 28)
+    if (over > 0) for (const r of row) r.bx = Math.max(28, r.bx - over)
   }
   return result
 })

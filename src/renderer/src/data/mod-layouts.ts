@@ -1,5 +1,5 @@
 import { ITEMS_BY_PATH } from './items'
-import { ATTACHMENT_SUBTYPE, type AttachmentSubtype } from './attachment-subtypes'
+import { ATTACHMENT_SUBTYPE, resolveItemPath, type AttachmentSubtype } from './attachment-subtypes'
 import { WEAPON_ATTACHMENT_LAYOUTS, type AttachmentOverlay } from './weapon-attachments'
 
 /**
@@ -137,4 +137,52 @@ function accepted(overlay: AttachmentOverlay, compatible: Set<string>): boolean 
   if (compatible.size === 0) return true
   const stem = stemOf(overlay.attachmentPath)
   return compatible.has(overlay.attachmentPath) || [...compatible].some((p) => stemOf(p) === stem)
+}
+
+/**
+ * Makes sure every attachment a weapon really carries has a slot in the editor, even when its
+ * layout (or the lack of one) does not list it, e.g. a vanilla suppressor on a modded rifle.
+ * Where it is drawn is borrowed from another attachment of the same kind on that weapon (an
+ * optic goes where the weapon's other optics go); with none, it is only selectable.
+ */
+const BORROW_POSITION = new Set<AttachmentSubtype>(['Optic', 'Muzzle', 'Laser'])
+
+export function ensureNestedLayout(weaponPath: string, nested: string[]): AttachmentOverlay[] {
+  let layout = WEAPON_ATTACHMENT_LAYOUTS.get(weaponPath)
+  for (const path of nested) {
+    const subtype = ATTACHMENT_SUBTYPE.get(path)
+    if (!subtype) continue
+    const known = (layout ?? []).some(
+      (o) => o.attachmentPath === path || resolveItemPath(o.attachmentPath) === path
+    )
+    if (known) continue
+    if (!layout) {
+      layout = []
+      WEAPON_ATTACHMENT_LAYOUTS.set(weaponPath, layout)
+    }
+    const sibling = BORROW_POSITION.has(subtype)
+      ? layout.find(
+          (o) =>
+            !o.noOverlay &&
+            !o.fill &&
+            ATTACHMENT_SUBTYPE.get(resolveItemPath(o.attachmentPath)) === subtype
+        )
+      : undefined
+    layout.push(
+      sibling
+        ? {
+            attachmentPath: path,
+            position: sibling.position,
+            scale: sibling.scale,
+            behind: sibling.behind
+          }
+        : {
+            attachmentPath: path,
+            position: DEFAULT_DOT[subtype] ?? [0, 0],
+            scale: 0.5,
+            noOverlay: true
+          }
+    )
+  }
+  return layout ?? []
 }

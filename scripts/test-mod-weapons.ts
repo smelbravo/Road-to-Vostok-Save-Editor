@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'fs'
 import { parseItemTres, parseTetrisScene } from '../src/main/mods'
 import { registerModItems } from '../src/renderer/src/data/mod-items'
 import { WEAPON_ATTACHMENT_LAYOUTS } from '../src/renderer/src/data/weapon-attachments'
+import { ensureNestedLayout } from '../src/renderer/src/data/mod-layouts'
 import { ATTACHMENT_SUBTYPE, getWeaponSlots } from '../src/renderer/src/data/attachment-subtypes'
 
 // Needs the SV-98 mod unpacked at argv[2] (items/ and Scenes/ folders)
@@ -85,6 +86,16 @@ check(
   'G28 magazine instance is a positioned overlay, not a hidden node',
   g28.overlays.some((o) => o.name === 'G28_Magazine' && o.position[0] === -28.7) &&
     g28.hidden.length === 0
+)
+// Equipped attachments the layout does not list still get a slot
+const acog = [...ATTACHMENT_SUBTYPE].find(([k, v]) => v === 'Optic' && k.includes('/ACOG/'))![0]
+const muzzle = [...ATTACHMENT_SUBTYPE].find(([, v]) => v === 'Muzzle')![0]
+const bare = ensureNestedLayout('res://Items/Weapons/Test/Bare.tres', [acog, muzzle])
+check('bare weapon gets selectable slots', bare.length === 2 && bare.every((o) => o.noOverlay))
+const borrowed = ensureNestedLayout(path, [muzzle])
+check(
+  'extra muzzle borrows the position of the weapon muzzle slot',
+  borrowed.some((o) => o.attachmentPath === muzzle)
 )
 console.log(names.join(', '))
 process.exit(fails ? 1 : 0)

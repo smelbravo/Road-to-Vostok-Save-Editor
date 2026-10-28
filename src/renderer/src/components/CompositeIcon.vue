@@ -2,7 +2,7 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { useItemIcons } from '../composables/useItemIcons'
 import { ITEMS_BY_PATH, getItemSize } from '../data/items'
-import { WEAPON_ATTACHMENT_LAYOUTS } from '../data/weapon-attachments'
+import { ensureNestedLayout } from '../data/mod-layouts'
 import { resolveLayoutPath } from '../data/attachment-subtypes'
 import type { AttachmentOverlay } from '../data/weapon-attachments'
 
@@ -34,8 +34,8 @@ interface ResolvedAttachment extends AttachmentOverlay {
 
 const resolvedAttachments = computed<ResolvedAttachment[]>(() => {
   if (props.nested.length === 0) return []
-  const layouts = WEAPON_ATTACHMENT_LAYOUTS.get(props.itemPath)
-  if (!layouts) return []
+  const layouts = ensureNestedLayout(props.itemPath, props.nested)
+  if (layouts.length === 0) return []
 
   const result: ResolvedAttachment[] = []
   for (const nestedPath of props.nested) {
