@@ -109,6 +109,11 @@ async function loadIcon(iconFile: string): Promise<string | null> {
   return pending
 }
 
+/** Forget icons that were not found, so a rescan can pick up files that exist now */
+export function forgetMissingIcons(): void {
+  for (const [key, value] of iconCache) if (!value) iconCache.delete(key)
+}
+
 export function useItemIcons() {
   // Start initialization on first use
   initIcons()

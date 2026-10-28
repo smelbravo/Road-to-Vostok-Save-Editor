@@ -1,6 +1,7 @@
 import { computed, shallowRef } from 'vue'
 import { ITEMS, ITEMS_BY_PATH, ITEMS_META, resolveItemMeta } from './items'
 import { ITEMS_BY_SLOT } from './equipment-slots'
+import { WEAPON_ATTACHMENT_LAYOUTS } from './weapon-attachments'
 import { registerModAttachmentSubtypes, registerModWeaponLayouts } from './mod-layouts'
 import type { GameItem, ItemCategory } from '../lib/types'
 
@@ -43,8 +44,24 @@ const CATEGORIES: ReadonlySet<string> = new Set<ItemCategory>([
 export function registerModItems(found: ModItem[], fromGame = false): void {
   const added: GameItem[] = []
   const touched = new Set<GameItem[]>()
+  let refreshed = false
   for (const m of found) {
-    if (ITEMS_BY_PATH.has(m.resourcePath)) continue
+    const known = ITEMS_BY_PATH.get(m.resourcePath)
+    if (known) {
+      // A rescan brings fresher data for mod items already registered (icons, sizes)
+      if (!fromGame && known.modded) {
+        if (m.iconFile && known.iconFile !== m.iconFile) {
+          known.iconFile = m.iconFile
+          refreshed = true
+        }
+        if (known.iconFile && !m.iconFile) {
+          delete known.iconFile
+          refreshed = true
+        }
+        if (m.layout || (m.compatible?.length ?? 0) > 0) WEAPON_ATTACHMENT_LAYOUTS.delete(m.resourcePath)
+      }
+      continue
+    }
     const item: GameItem = {
       category: (CATEGORIES.has(m.category) ? m.category : 'Misc') as ItemCategory,
       id: m.id,
@@ -79,5 +96,5 @@ export function registerModItems(found: ModItem[], fromGame = false): void {
     registerModWeaponLayouts(found)
   }
   for (const list of touched) list.sort((a, b) => a.displayName.localeCompare(b.displayName))
-  if (added.length > 0) modItems.value = [...modItems.value, ...added]
+  if (added.length > 0 || refreshed) modItems.value = [...modItems.value, ...added]
 }

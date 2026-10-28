@@ -17,6 +17,7 @@
 - Edit Loadout slot buttons on the same edge no longer overlap.
 - Icons are also found when the file name only contains the item name (`Icon_G28_Scope.png` for `G28_Scope`).
 - Gear Storage no longer lists weapons lying in the inventory.
+- Rescan in Settings now applies right away (updated icons and weapon layouts of mod items already loaded) and shows "Scanning…" while it runs.
 
 - Icons stored as compressed `.res` textures (zstd, used by NARK's Karambit and others) and as portable textures with a lossless WebP/PNG inside (Green Swamp ghillie items) are now read.
 - G28-style weapons: attachments that are drawn as full-size layers over the weapon icon (scope, suppressor, bipod, camo) are shown on the icon and offered in the workbench, even when the weapon's `compatible` list only names the vanilla ones. Attachments can also claim a weapon from their own `compatible` list.

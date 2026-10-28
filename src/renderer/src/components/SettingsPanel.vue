@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useItemIcons } from '../composables/useItemIcons'
-import { installedMods, modScan, modScanError, loadMods, gameCatalog } from '../composables/useMods'
+import { installedMods, modScan, modScanError, loadMods, modScanning, gameCatalog } from '../composables/useMods'
 import { gameTaskStats } from '../composables/useGameTasks'
 import { sourceInfo, hasSlots, chooseSource, slotLabel } from '../composables/useSaveSource'
 import { init } from '../composables/useTresFileLoader'
@@ -129,8 +129,11 @@ onMounted(refreshDir)
           }}
           added to the catalog
         </span>
-        <Button variant="outline" size="sm" class="text-xs shrink-0" @click="loadMods(true)">
-          Rescan
+        <Button variant="outline" size="sm" class="text-xs shrink-0" 
+          :disabled="modScanning"
+          @click="loadMods(true)"
+        >
+          {{ modScanning ? 'Scanning…' : 'Rescan' }}
         </Button>
       </div>
       <p

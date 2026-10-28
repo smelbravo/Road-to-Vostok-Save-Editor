@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { forgetMissingIcons } from './useItemIcons'
 import { registerModItems } from '../data/mod-items'
 import { ITEMS_BY_PATH } from '../data/items'
 import { parseGseSettings, type GseSettings } from '../data/gse'
@@ -6,6 +7,7 @@ import { parseGseSettings, type GseSettings } from '../data/gse'
 /** Result of looking at the player's mods folder (empty when the game is not found). */
 export const modScan = ref<ModScan | null>(null)
 export const modScanError = ref<string | null>(null)
+export const modScanning = ref(false)
 
 const GSE_ID = 'gse'
 
@@ -27,13 +29,17 @@ export const gseSettings = computed<GseSettings | undefined>(() => {
 
 /** Scans mods once at startup. A failure only means modded items stay unnamed. */
 export async function loadMods(force = false): Promise<void> {
+  modScanning.value = true
   try {
     const scan = await window.api.scanMods(force)
+    if (force) forgetMissingIcons()
     modScan.value = scan
     registerModItems(scan.items)
     modScanError.value = null
   } catch (e) {
     modScanError.value = e instanceof Error ? e.message : 'Could not scan the mods folder'
+  } finally {
+    modScanning.value = false
   }
 }
 
