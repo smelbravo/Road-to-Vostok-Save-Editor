@@ -125,14 +125,11 @@ const wrapperStyle = computed(() => {
 })
 
 // Scale factor matching what object-contain does to the weapon image.
-// When the display area (w×h) differs from the weapon's actual size,
-// attachment positions must be scaled to match the visual weapon size.
+// Use the rendered slot dimensions as source of truth; some catalog sizes can
+// differ from what the grid/layout is actually showing.
 const imgScale = computed(() => {
-  const item = ITEMS_BY_PATH.get(props.itemPath)
-  if (!item) return 1
-  const actual = getItemSize(item)
-  const actualW = actual.w * props.cellSize
-  const actualH = actual.h * props.cellSize
+  const actualW = (props.rotated ? props.h : props.w) * props.cellSize
+  const actualH = (props.rotated ? props.w : props.h) * props.cellSize
   const dispW = (props.rotated ? props.h : props.w) * props.cellSize - 4
   const dispH = (props.rotated ? props.w : props.h) * props.cellSize - 4
   return Math.min(dispW / actualW, dispH / actualH, 1)
@@ -148,8 +145,7 @@ const fitTransform = computed(() => {
   const wrapW = (props.rotated ? props.h : props.w) * props.cellSize - 4
   const wrapH = (props.rotated ? props.w : props.h) * props.cellSize - 4
 
-  const item = ITEMS_BY_PATH.get(props.itemPath)
-  const actual = item ? getItemSize(item) : { w: props.w, h: props.h }
+  const actual = props.rotated ? { w: props.h, h: props.w } : { w: props.w, h: props.h }
   const imgW = actual.w * props.cellSize * s
   const imgH = actual.h * props.cellSize * s
 
