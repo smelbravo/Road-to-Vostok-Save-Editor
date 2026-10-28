@@ -108,8 +108,8 @@ const slotPositions = computed<SlotPosition[]>(() => {
     if (!subtype) continue
     if (!groups.has(subtype)) groups.set(subtype, [])
     groups.get(subtype)!.push({
-      x: cx + layout.position[0] * factor,
-      y: cy + layout.position[1] * factor
+      x: cx + 0.5 * layout.position[0] * factor,
+      y: cy + 0.5 * layout.position[1] * factor
     })
   }
 

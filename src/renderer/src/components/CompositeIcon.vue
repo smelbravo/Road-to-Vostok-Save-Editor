@@ -158,8 +158,8 @@ const fitTransform = computed(() => {
   const factor = props.cellSize / 64
   for (const att of atts) {
     if (att.fill) continue
-    const cx = wrapW / 2 + att.position[0] * factor * s
-    const cy = wrapH / 2 + att.position[1] * factor * s
+    const cx = wrapW / 2 + 0.5 * att.position[0] * factor * s
+    const cy = wrapH / 2 + 0.5 * att.position[1] * factor * s
     const aw = att.attW * props.cellSize * att.scale * s
     const ah = att.attH * props.cellSize * att.scale * s
     minX = Math.min(minX, cx - aw / 2)
@@ -194,8 +194,8 @@ function attStyle(att: ResolvedAttachment) {
   const factor = props.cellSize / 64
   const s = imgScale.value
   return {
-    left: `calc(50% + ${att.position[0] * factor * s}px)`,
-    top: `calc(50% + ${att.position[1] * factor * s}px)`,
+    left: `calc(50% + ${0.5 * att.position[0] * factor * s}px)`,
+    top: `calc(50% + ${0.5 * att.position[1] * factor * s}px)`,
     width: `${att.attW * props.cellSize * att.scale * s}px`,
     height: `${att.attH * props.cellSize * att.scale * s}px`,
     transform: `translate(-50%, -50%)${att.rotation ? ` rotate(${att.rotation}rad)` : ''}`,
