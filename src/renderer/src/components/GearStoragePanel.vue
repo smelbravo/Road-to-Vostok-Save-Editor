@@ -457,15 +457,15 @@ const statusLine = computed(() => {
                 v-for="entry in section.entries"
                 :key="entry.id"
                 class="absolute rounded-sm border bg-muted/50 hover:bg-primary/15 flex items-center justify-center overflow-hidden"
-                :class="
+                :class="[
                   entry.id === selectedId
                     ? 'border-primary ring-1 ring-primary'
                     : entry.problem
                       ? 'border-yellow-500/70'
-                      : 'border-border/60'
-                "
+                      : 'border-border/60',
+                  drag?.started && drag.entry.id === entry.id ? 'opacity-40' : ''
+                ]"
                 :style="entryStyle(entry)"
-                :class="drag?.started && drag.entry.id === entry.id ? 'opacity-40' : ''"
                 @pointerdown="onPointerDown($event, entry)"
                 :title="`${entry.item.itemName}${entry.problem ? '\n' + entry.problem : ''}`"
                 @click="onEntryClick(entry)"

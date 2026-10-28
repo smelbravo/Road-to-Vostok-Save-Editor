@@ -30,7 +30,7 @@ interface ResolvedAttachment extends AttachmentOverlay {
   iconFile: string
   attW: number
   attH: number
-  /** Mod textures: size follows the image's own pixels (the scene scales the texture, not the item) */
+  /** Scene textures: size follows the image's own pixels (the scene scales the texture, not the item) */
   natural: boolean
 }
 
@@ -53,7 +53,7 @@ const resolvedAttachments = computed<ResolvedAttachment[]>(() => {
       iconFile,
       attW: size.w,
       attH: size.h,
-      natural: !!overlay.iconFile || !!item.modded
+      natural: !!overlay.iconFile
     })
   }
   return result
@@ -88,8 +88,15 @@ async function loadAttachments() {
     let sized = att
     if (att.natural && !att.fill) {
       const dims = await imageSize(url)
-      // 128 px per cell is the unit scenes are drawn in
-      if (dims) sized = { ...att, attW: dims.w / 128, attH: dims.h / 128 }
+      if (dims) {
+        const sizeFrom64 = { w: dims.w / 64, h: dims.h / 64 }
+        const sizeFrom128 = { w: dims.w / 128, h: dims.h / 128 }
+        const score = (w: number, h: number) =>
+          Math.abs(w - att.attW) + Math.abs(h - att.attH) + Math.abs(w * h - att.attW * att.attH)
+        const use64 = score(sizeFrom64.w, sizeFrom64.h) <= score(sizeFrom128.w, sizeFrom128.h)
+        const basis = use64 ? sizeFrom64 : sizeFrom128
+        sized = { ...att, attW: basis.w, attH: basis.h }
+      }
     }
     loaded.push({ att: sized, url })
   }
