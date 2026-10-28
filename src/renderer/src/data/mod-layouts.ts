@@ -1,4 +1,4 @@
-import { ITEMS_BY_PATH } from './items'
+import { ITEMS_BY_PATH, getItemSize } from './items'
 import { ATTACHMENT_SUBTYPE, resolveItemPath, type AttachmentSubtype } from './attachment-subtypes'
 import { WEAPON_ATTACHMENT_LAYOUTS, type AttachmentOverlay } from './weapon-attachments'
 
@@ -22,6 +22,32 @@ const DEFAULT_DOT: Record<string, [number, number]> = {
   Camo: [100, 70],
   Bipod: [250, 40],
   Other: [200, 70]
+}
+
+/**
+ * Where an attachment goes on a weapon whose scene says nothing about it. Proportions taken from
+ * the built-in rifles (optic on the top rail, muzzle device at the end of the barrel, laser on
+ * the handguard); it is an approximation, so it is only used when nothing better is known.
+ */
+function guessPlacement(
+  subtype: AttachmentSubtype,
+  weaponPath: string
+): Pick<AttachmentOverlay, 'position' | 'scale'> | null {
+  const weapon = ITEMS_BY_PATH.get(weaponPath)
+  if (!weapon) return null
+  const { w, h } = getItemSize(weapon)
+  const halfW = w * 64
+  const halfH = h * 64
+  switch (subtype) {
+    case 'Optic':
+      return { position: [-0.18 * halfW, -0.62 * halfH], scale: 0.55 }
+    case 'Muzzle':
+      return { position: [0.875 * halfW, -0.3 * halfH], scale: 0.5 }
+    case 'Laser':
+      return { position: [0.26 * halfW, -0.58 * halfH], scale: 0.7 }
+    default:
+      return null
+  }
 }
 
 function subtypeOf(item: { subtype?: string; resourcePath: string }): AttachmentSubtype {
@@ -121,12 +147,17 @@ export function registerModWeaponLayouts(items: ModWeaponInput[]): void {
         continue
       const subtype = ATTACHMENT_SUBTYPE.get(path)
       if (!subtype || !ITEMS_BY_PATH.has(path)) continue
-      result.push({
-        attachmentPath: path,
-        position: DEFAULT_DOT[subtype] ?? [0, 0],
-        scale: 0.5,
-        noOverlay: true
-      })
+      const guess = guessPlacement(subtype, weapon.resourcePath)
+      result.push(
+        guess
+          ? { attachmentPath: path, ...guess, behind: false }
+          : {
+              attachmentPath: path,
+              position: DEFAULT_DOT[subtype] ?? [0, 0],
+              scale: 0.5,
+              noOverlay: true
+            }
+      )
     }
     if (result.length > 0) WEAPON_ATTACHMENT_LAYOUTS.set(weapon.resourcePath, result)
   }
@@ -168,8 +199,11 @@ export function ensureNestedLayout(weaponPath: string, nested: string[]): Attach
             ATTACHMENT_SUBTYPE.get(resolveItemPath(o.attachmentPath)) === subtype
         )
       : undefined
+    const guess = sibling ? null : guessPlacement(subtype, weaponPath)
     layout.push(
-      sibling
+      guess
+        ? { attachmentPath: path, ...guess, behind: false }
+        : sibling
         ? {
             attachmentPath: path,
             position: sibling.position,

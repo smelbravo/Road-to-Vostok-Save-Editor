@@ -30,6 +30,8 @@ interface ResolvedAttachment extends AttachmentOverlay {
   iconFile: string
   attW: number
   attH: number
+  /** Mod textures: size follows the image's own pixels (the scene scales the texture, not the item) */
+  natural: boolean
 }
 
 const resolvedAttachments = computed<ResolvedAttachment[]>(() => {
@@ -46,7 +48,13 @@ const resolvedAttachments = computed<ResolvedAttachment[]>(() => {
     const iconFile = overlay.iconFile ?? item?.iconFile
     if (!item || !iconFile) continue
     const size = getItemSize(item)
-    result.push({ ...overlay, iconFile, attW: size.w, attH: size.h })
+    result.push({
+      ...overlay,
+      iconFile,
+      attW: size.w,
+      attH: size.h,
+      natural: !!overlay.iconFile || !!item.modded
+    })
   }
   return result
 })
@@ -61,13 +69,29 @@ async function load() {
   await loadAttachments()
 }
 
+function imageSize(url: string): Promise<{ w: number; h: number } | null> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+}
+
 async function loadAttachments() {
   if (status.value !== 'done') return
   const atts = resolvedAttachments.value
   const loaded: { att: ResolvedAttachment; url: string }[] = []
   for (const att of atts) {
     const url = await loadIcon(att.iconFile)
-    if (url) loaded.push({ att, url })
+    if (!url) continue
+    let sized = att
+    if (att.natural && !att.fill) {
+      const dims = await imageSize(url)
+      // 128 px per cell is the unit scenes are drawn in
+      if (dims) sized = { ...att, attW: dims.w / 128, attH: dims.h / 128 }
+    }
+    loaded.push({ att: sized, url })
   }
   loadedAttachments.value = loaded
 }
@@ -110,7 +134,7 @@ const imgScale = computed(() => {
 // Compute auto-fit scale when attachments overflow the weapon area
 const fitTransform = computed(() => {
   if (props.noFit) return undefined
-  const atts = resolvedAttachments.value
+  const atts = loadedAttachments.value.map((e) => e.att)
   const s = imgScale.value
 
   // When rotated, the wrapper is h×w (pre-rotation dimensions)
