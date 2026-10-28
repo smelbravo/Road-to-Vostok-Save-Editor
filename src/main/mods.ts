@@ -1,4 +1,6 @@
 import { createHash } from 'crypto'
+import { parseRsrc } from './rsrc'
+import { itemFromRsrc } from './game-items'
 import { open, readdir, readFile, stat } from 'fs/promises'
 import { join, extname } from 'path'
 import { inflateRaw } from 'zlib'
@@ -27,6 +29,9 @@ export interface InstalledMod {
   location: 'mods' | 'library'
   /** Enabled in the active profile; null when no profile says anything about it */
   enabled: boolean | null
+  /** Items found in the archive, and resource files that could not be read as items */
+  itemCount?: number
+  skipped?: string[]
 }
 
 export interface ModItem {
@@ -386,7 +391,9 @@ export function parseTetrisScene(text: string): ModLayout | null {
 // ---------------------------------------------------------------------------
 
 const MOD_EXTENSIONS = new Set(['.vmz', '.zip'])
-const MAX_TRES_BYTES = 256 * 1024
+const MAX_TRES_BYTES = 2 * 1024 * 1024
+/** Binary item resources (.res) are small; the big ones are icons, meshes and animations */
+const MAX_RES_ITEM_BYTES = 256 * 1024
 
 /** Receives an icon found inside a mod; returns true when it was stored under `key`. */
 /** true when stored, otherwise the reason it could not be */
@@ -519,14 +526,25 @@ export async function scanModArchive(
     enabled: null
   }
   const items: ModItem[] = []
+  const skipped: string[] = []
   for (const entry of entries) {
-    if (!entry.name.toLowerCase().endsWith('.tres') || entry.size > MAX_TRES_BYTES) continue
+    const lower = entry.name.toLowerCase()
+    const isTres = lower.endsWith('.tres')
+    const isRes = lower.endsWith('.res')
+    if (!isTres && !isRes) continue
+    if (entry.size > (isTres ? MAX_TRES_BYTES : MAX_RES_ITEM_BYTES)) {
+      if (isTres) skipped.push(`${entry.name} (too big)`)
+      continue
+    }
     try {
-      const text = (await readZipEntry(buf, entry)).toString('utf8')
-      const item = parseItemTres(text, 'res://' + entry.name, mod.id)
+      const data = await readZipEntry(buf, entry)
+      const item = isTres
+        ? parseItemTres(data.toString('utf8'), 'res://' + entry.name, mod.id)
+        : itemFromBinary(data, 'res://' + entry.name, mod.id)
       if (item) items.push(item)
     } catch {
       // one unreadable resource must not hide the rest of the mod
+      if (isTres) skipped.push(`${entry.name} (unreadable)`)
     }
   }
   for (const item of items) {
@@ -562,6 +580,8 @@ export async function scanModArchive(
       }
     }
   }
+  mod.itemCount = items.length
+  if (skipped.length > 0) mod.skipped = skipped.slice(0, 8)
   return { mod, items }
 }
 
@@ -671,4 +691,31 @@ export async function scanMods(opts: ScanOptions): Promise<Omit<ModScan, 'modsDi
     }
   }
   return result
+}
+
+/** An item stored as a binary resource (`.res`); null for every other kind of resource */
+function itemFromBinary(data: Buffer, resourcePath: string, modId: string): ModItem | null {
+  const res = parseRsrc(data)
+  if (!res) return null
+  const item = itemFromRsrc(res, resourcePath)
+  if (!item) return null
+  const refs = (v: unknown): string[] =>
+    Array.isArray(v)
+      ? v.flatMap((x) =>
+          x && typeof x === 'object' && 'ref' in x && typeof x.ref === 'string' ? [x.ref] : []
+        )
+      : []
+  const ref = (v: unknown): string => refs([v])[0] ?? ''
+  const subtype = res.props.get('subtype')
+  const compatible = refs(res.props.get('compatible')).filter((p) => p.endsWith('.tres'))
+  const tetris = ref(res.props.get('tetris'))
+  const { parsed: _parsed, ...rest } = item
+  void _parsed
+  return {
+    ...rest,
+    modId,
+    ...(typeof subtype === 'string' && subtype ? { subtype } : {}),
+    ...(compatible.length > 0 ? { compatible } : {}),
+    ...(tetris ? { tetrisPath: tetris } : {})
+  }
 }

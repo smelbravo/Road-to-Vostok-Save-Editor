@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue'
+import { computed, inject, onMounted, onUnmounted, ref } from 'vue'
 import {
   storageContainers,
   storedItemCount,
@@ -7,6 +7,7 @@ import {
   moveStoredToInventory,
   moveStoredItem,
   removeStoredItem,
+  rotateStoredItem,
   updateStoredItem,
   type StorageContainer,
   type StorageSection,
@@ -28,7 +29,7 @@ import type { AttachmentRemoveOption } from '../lib/types'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Input } from '../components/ui/input'
-import { Plus, Trash2, ArrowDownToLine, TriangleAlert } from 'lucide-vue-next'
+import { Plus, Trash2, ArrowDownToLine, RotateCw, TriangleAlert } from 'lucide-vue-next'
 
 const CELL_UI = 44
 
@@ -215,6 +216,24 @@ function toInventory(): void {
   if (!result.ok) toast.show(result.message, 'error')
   else selectedId.value = null
 }
+
+function rotate(): void {
+  if (!selected.value) return
+  const result = rotateStoredItem(selected.value.entry.id, selected.value.section)
+  if (!result.ok && result.message) toast.show(result.message, 'error')
+}
+
+function onKey(e: KeyboardEvent): void {
+  if (e.key.toLowerCase() !== 'r' || e.ctrlKey || e.metaKey || e.altKey) return
+  const target = e.target as HTMLElement | null
+  if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
+  if (!selected.value) return
+  e.preventDefault()
+  rotate()
+}
+
+onMounted(() => window.addEventListener('keydown', onKey))
+onUnmounted(() => window.removeEventListener('keydown', onKey))
 
 function remove(): void {
   if (!selected.value) return
@@ -447,6 +466,17 @@ const statusLine = computed(() => {
             @click="editArmor"
           >
             Edit armor
+          </Button>
+          <Button
+            v-if="!isBox(selected.section.spec.kind)"
+            variant="outline"
+            size="sm"
+            class="h-7 text-xs"
+            title="Rotate (R)"
+            @click="rotate"
+          >
+            <RotateCw class="h-3.5 w-3.5" />
+            Rotate
           </Button>
           <Button variant="outline" size="sm" class="h-7 text-xs" @click="toInventory">
             <ArrowDownToLine class="h-3.5 w-3.5" />

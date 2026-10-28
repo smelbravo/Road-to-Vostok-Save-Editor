@@ -17,6 +17,8 @@
 - Edit Loadout slot buttons on the same edge no longer overlap.
 - Icons are also found when the file name only contains the item name (`Icon_G28_Scope.png` for `G28_Scope`).
 - Gear Storage no longer lists weapons lying in the inventory.
+- Gear Storage: press R (or the Rotate button) to turn a selected item, like in the inventory.
+- Mods that store items as binary `.res` files are read too, `.tres` files up to 2 MB are accepted, and Settings shows how many items each mod added and which resource files were skipped.
 - Rescan in Settings now applies right away (updated icons and weapon layouts of mod items already loaded) and shows "Scanning…" while it runs.
 
 - Icons stored as compressed `.res` textures (zstd, used by NARK's Karambit and others) and as portable textures with a lossless WebP/PNG inside (Green Swamp ghillie items) are now read.

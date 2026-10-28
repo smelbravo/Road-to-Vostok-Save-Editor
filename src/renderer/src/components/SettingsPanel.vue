@@ -192,6 +192,10 @@ onMounted(refreshDir)
             >{{ mod.id }}{{ mod.version ? ` · v${mod.version}` : ''
             }}{{ mod.location === 'library' ? ' · Mod Manager library' : '' }}</span
           >
+          <span v-if="mod.itemCount" class="text-muted-foreground">· {{ mod.itemCount }} items</span>
+          <span v-if="mod.skipped?.length" class="text-yellow-400 select-text"
+            >skipped: {{ mod.skipped.join(', ') }}</span
+          >
           <span v-if="mod.enabled === false" class="text-yellow-400">disabled in profile</span>
         </li>
       </ul>

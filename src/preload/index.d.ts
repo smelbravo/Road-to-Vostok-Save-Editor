@@ -55,6 +55,9 @@ declare global {
     location: 'mods' | 'library'
     /** Enabled in the active profile; null when no profile mentions it */
     enabled: boolean | null
+    /** Items found in the archive, and resource files that could not be read as items */
+    itemCount?: number
+    skipped?: string[]
   }
 
   interface ModItem {

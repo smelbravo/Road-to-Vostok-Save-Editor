@@ -322,6 +322,30 @@ export function moveStoredItem(
   return { ok: true, message: warn }
 }
 
+/** Turns an item stored in an open grid by 90 degrees (the R key); it must still fit where it is. */
+export function rotateStoredItem(itemId: string, section: StorageSection): StoreResult {
+  const found = findItemDeep(itemId)
+  if (!found) return { ok: false, message: 'Item not found.' }
+  const { spec } = section
+  if (isBox(spec.kind)) return { ok: false, message: 'Items in a single-item slot cannot be rotated.' }
+  const { item } = found
+  const base = sizeOf(item.itemData, false)
+  if (base.w === base.h) return { ok: false, message: '' }
+  const col = Math.round(item.gridPosition.x / CELL)
+  const row = Math.round(item.gridPosition.y / CELL)
+  const next = !item.gridRotated
+  const size = next ? { w: base.h, h: base.w } : base
+  if (col + size.w > spec.w || row + size.h > spec.h)
+    return { ok: false, message: 'No room to rotate it there.' }
+  const taken = cellsTaken(section.entries.filter((e) => e.id !== itemId))
+  for (let r = row; r < row + size.h; r++)
+    for (let c = col; c < col + size.w; c++)
+      if (taken.has(`${c},${r}`)) return { ok: false, message: 'No room to rotate it there.' }
+  item.gridRotated = next
+  markDirty()
+  return { ok: true, message: '' }
+}
+
 export function removeStoredItem(itemId: string): void {
   const found = findItemDeep(itemId)
   if (!found) return
