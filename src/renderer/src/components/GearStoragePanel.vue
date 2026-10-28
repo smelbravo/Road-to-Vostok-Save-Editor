@@ -6,6 +6,7 @@ import {
   editableFields,
   moveStoredToInventory,
   moveStoredItem,
+  checkStoredMove,
   removeStoredItem,
   rotateStoredItem,
   updateStoredItem,
@@ -92,53 +93,115 @@ function iconOf(path: string): string {
   return ITEMS_BY_PATH.get(path)?.iconFile ?? ''
 }
 
-// Drag and drop between slots and cells (HTML5 drag events)
-const dragId = ref<string | null>(null)
-const dragGrab = ref({ x: 0, y: 0 })
-const dropTarget = ref<string | null>(null)
-
-function onDragStart(event: DragEvent, entry: StoredEntry): void {
-  dragId.value = entry.id
-  selectedId.value = entry.id
-  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
-  dragGrab.value = {
-    x: Math.max(0, Math.min(entry.w - 1, Math.floor((event.clientX - rect.left) / CELL_UI))),
-    y: Math.max(0, Math.min(entry.h - 1, Math.floor((event.clientY - rect.top) / CELL_UI)))
-  }
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.setData('text/plain', entry.id)
-  }
+// Drag and drop between slots and cells: pointer based like the inventory, so a ghost follows
+// the cursor, the drop spot shows green/red and R turns the item while it is held.
+interface DragState {
+  entry: StoredEntry
+  rotated: boolean
+  /** Cell of the item the pointer holds */
+  grabX: number
+  grabY: number
+  startX: number
+  startY: number
+  x: number
+  y: number
+  started: boolean
+  target: {
+    key: string
+    holderId: string
+    section: StorageSection
+    col: number
+    row: number
+    ok: boolean
+    w: number
+    h: number
+  } | null
 }
 
-function onDragEnd(): void {
-  dragId.value = null
-  dropTarget.value = null
+const drag = ref<DragState | null>(null)
+let justDragged = false
+
+function dragSize(d: DragState): { w: number; h: number } {
+  const turned = d.rotated !== d.entry.item.gridRotated
+  return turned ? { w: d.entry.h, h: d.entry.w } : { w: d.entry.w, h: d.entry.h }
+}
+
+function onPointerDown(event: PointerEvent, entry: StoredEntry): void {
+  if (event.button !== 0) return
+  event.preventDefault()
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  drag.value = {
+    entry,
+    rotated: entry.item.gridRotated,
+    grabX: Math.max(0, Math.min(entry.w - 1, Math.floor((event.clientX - rect.left) / CELL_UI))),
+    grabY: Math.max(0, Math.min(entry.h - 1, Math.floor((event.clientY - rect.top) / CELL_UI))),
+    startX: event.clientX,
+    startY: event.clientY,
+    x: event.clientX,
+    y: event.clientY,
+    started: false,
+    target: null
+  }
 }
 
 function targetKey(container: StorageContainer, section: StorageSection): string {
   return `${container.holderId}|${section.spec.key}`
 }
 
-function onDragOver(event: DragEvent, container: StorageContainer, section: StorageSection): void {
-  if (!dragId.value) return
-  event.preventDefault()
-  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
-  dropTarget.value = targetKey(container, section)
+function findTarget(d: DragState): DragState['target'] {
+  const el = document
+    .elementsFromPoint(d.x, d.y)
+    .find((e) => (e as HTMLElement).dataset?.storTarget) as HTMLElement | undefined
+  const key = el?.dataset.storTarget
+  if (!el || !key) return null
+  for (const container of storageContainers.value)
+    for (const section of container.sections) {
+      if (targetKey(container, section) !== key) continue
+      const rect = el.getBoundingClientRect()
+      const col = Math.floor((d.x - rect.left) / CELL_UI) - d.grabX
+      const row = Math.floor((d.y - rect.top) / CELL_UI) - d.grabY
+      const size = dragSize(d)
+      const check = checkStoredMove(d.entry.id, container.holderId, section, col, row, d.rotated)
+      return {
+        key,
+        holderId: container.holderId,
+        section,
+        col: isBox(section.spec.kind) ? 0 : col,
+        row: isBox(section.spec.kind) ? 0 : row,
+        ok: check.ok,
+        w: isBox(section.spec.kind) ? section.spec.w : size.w,
+        h: isBox(section.spec.kind) ? section.spec.h : size.h
+      }
+    }
+  return null
 }
 
-function onDrop(event: DragEvent, container: StorageContainer, section: StorageSection): void {
-  const id = dragId.value
-  dragId.value = null
-  dropTarget.value = null
-  if (!id) return
-  event.preventDefault()
-  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
-  const col = Math.floor((event.clientX - rect.left) / CELL_UI) - dragGrab.value.x
-  const row = Math.floor((event.clientY - rect.top) / CELL_UI) - dragGrab.value.y
-  const result = moveStoredItem(id, container.holderId, section, col, row)
-  if (!result.ok) toast.show(result.message, 'error')
-  else if (result.message) toast.show(result.message, 'error')
+function onPointerMove(event: PointerEvent): void {
+  const d = drag.value
+  if (!d) return
+  d.x = event.clientX
+  d.y = event.clientY
+  if (!d.started && Math.hypot(d.x - d.startX, d.y - d.startY) > 5) {
+    d.started = true
+    selectedId.value = d.entry.id
+  }
+  if (d.started) d.target = findTarget(d)
+}
+
+function onPointerUp(): void {
+  const d = drag.value
+  drag.value = null
+  if (!d || !d.started) return
+  justDragged = true
+  setTimeout(() => (justDragged = false), 0)
+  const t = d.target
+  if (!t) return
+  const result = moveStoredItem(d.entry.id, t.holderId, t.section, t.col, t.row, d.rotated)
+  if (!result.ok || result.message) toast.show(result.message, 'error')
+}
+
+function onEntryClick(entry: StoredEntry): void {
+  if (!justDragged) selectedId.value = entry.id
 }
 
 function openAdd(container: StorageContainer, section: StorageSection): void {
@@ -227,13 +290,33 @@ function onKey(e: KeyboardEvent): void {
   if (e.key.toLowerCase() !== 'r' || e.ctrlKey || e.metaKey || e.altKey) return
   const target = e.target as HTMLElement | null
   if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
+  const d = drag.value
+  if (d?.started) {
+    e.preventDefault()
+    const base = d.entry.item.gridRotated ? { w: d.entry.h, h: d.entry.w } : { w: d.entry.w, h: d.entry.h }
+    if (base.w === base.h) return
+    d.rotated = !d.rotated
+    const size = dragSize(d)
+    d.grabX = Math.min(d.grabX, size.w - 1)
+    d.grabY = Math.min(d.grabY, size.h - 1)
+    d.target = findTarget(d)
+    return
+  }
   if (!selected.value) return
   e.preventDefault()
   rotate()
 }
 
-onMounted(() => window.addEventListener('keydown', onKey))
-onUnmounted(() => window.removeEventListener('keydown', onKey))
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerup', onPointerUp)
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKey)
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', onPointerUp)
+})
 
 function remove(): void {
   if (!selected.value) return
@@ -352,12 +435,24 @@ const statusLine = computed(() => {
 
             <div
               class="relative rounded-sm border border-border/70 bg-background/60 stor-grid"
-              :class="dropTarget === targetKey(container, section) ? 'ring-2 ring-primary/70' : ''"
+              :data-stor-target="targetKey(container, section)"
               :style="gridStyle(section)"
-              @dragover="onDragOver($event, container, section)"
-              @dragleave="dropTarget = null"
-              @drop="onDrop($event, container, section)"
             >
+              <div
+                v-if="drag?.started && drag.target?.key === targetKey(container, section)"
+                class="absolute rounded-sm border pointer-events-none z-20"
+                :class="
+                  drag.target.ok
+                    ? 'bg-green-500/30 border-green-500/70'
+                    : 'bg-red-500/30 border-red-500/70'
+                "
+                :style="{
+                  left: `${drag.target.col * CELL_UI}px`,
+                  top: `${drag.target.row * CELL_UI}px`,
+                  width: `${drag.target.w * CELL_UI}px`,
+                  height: `${drag.target.h * CELL_UI}px`
+                }"
+              />
               <button
                 v-for="entry in section.entries"
                 :key="entry.id"
@@ -370,11 +465,10 @@ const statusLine = computed(() => {
                       : 'border-border/60'
                 "
                 :style="entryStyle(entry)"
-                draggable="true"
-                @dragstart="onDragStart($event, entry)"
-                @dragend="onDragEnd"
+                :class="drag?.started && drag.entry.id === entry.id ? 'opacity-40' : ''"
+                @pointerdown="onPointerDown($event, entry)"
                 :title="`${entry.item.itemName}${entry.problem ? '\n' + entry.problem : ''}`"
-                @click="selectedId = entry.id"
+                @click="onEntryClick(entry)"
                 @contextmenu.prevent="onContextMenu($event, entry)"
               >
                 <CompositeIcon
@@ -505,6 +599,28 @@ const statusLine = computed(() => {
       @delete="menuDelete"
       @close="menu = null"
     />
+
+    <div
+      v-if="drag?.started"
+      class="fixed pointer-events-none z-50 opacity-80 rounded-sm border border-primary bg-muted/70 overflow-hidden"
+      :style="{
+        left: `${drag.x - (drag.grabX + 0.5) * CELL_UI}px`,
+        top: `${drag.y - (drag.grabY + 0.5) * CELL_UI}px`,
+        width: `${dragSize(drag).w * CELL_UI}px`,
+        height: `${dragSize(drag).h * CELL_UI}px`
+      }"
+    >
+      <CompositeIcon
+        v-if="iconOf(drag.entry.item.itemPath)"
+        :icon-file="iconOf(drag.entry.item.itemPath)"
+        :item-path="drag.entry.item.itemPath"
+        :nested="drag.entry.item.nested"
+        :w="dragSize(drag).w"
+        :h="dragSize(drag).h"
+        :cell-size="CELL_UI"
+        :rotated="drag.rotated"
+      />
+    </div>
 
     <StorageAddDialog
       v-model:open="dialogOpen"

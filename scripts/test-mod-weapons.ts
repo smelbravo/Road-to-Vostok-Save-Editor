@@ -80,7 +80,7 @@ texture = ExtResource("o_Scope")
 `)!
 check(
   'G28 full-size layer parsed',
-  g28.overlays.some((o) => o.name === 'G28_Scope' && o.fill && !!o.texture)
+  g28.overlays.some((o) => o.name === 'G28_Scope' && !!o.texture && o.position[0] === 0)
 )
 check(
   'G28 magazine instance is a positioned overlay, not a hidden node',

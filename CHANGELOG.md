@@ -17,7 +17,8 @@
 - Edit Loadout slot buttons on the same edge no longer overlap.
 - Icons are also found when the file name only contains the item name (`Icon_G28_Scope.png` for `G28_Scope`).
 - Gear Storage no longer lists weapons lying in the inventory.
-- Gear Storage: press R (or the Rotate button) to turn a selected item, like in the inventory.
+- Gear Storage: items are dragged like in the inventory (ghost under the cursor, green or red drop spot) and R turns the item you hold, or the selected one.
+- G28-style attachment layers are drawn at their texture size and offset instead of being stretched over the whole weapon (the suppressor sat in the wrong place).
 - Modded attachment icons are drawn at the size their own texture gives (they were tiny when the mod texture is larger than the inventory icon), and accepted optics, muzzle devices and lasers a weapon scene does not place are drawn at an approximate position instead of not at all.
 - Mods that store items as binary `.res` files are read too, `.tres` files up to 2 MB are accepted, and Settings shows how many items each mod added and which resource files were skipped.
 - Rescan in Settings now applies right away (updated icons and weapon layouts of mod items already loaded) and shows "Scanning…" while it runs.

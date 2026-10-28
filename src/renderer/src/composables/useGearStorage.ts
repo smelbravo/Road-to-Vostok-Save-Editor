@@ -270,6 +270,46 @@ function containsDeep(root: SlotItemData, id: string): boolean {
   return root.storage.some((s) => s.id === id || containsDeep(s, id))
 }
 
+/** Whether a stored item may be dropped at a spot (used for the green/red drop preview and by the move itself). */
+export function checkStoredMove(
+  itemId: string,
+  targetHolderId: string,
+  section: StorageSection,
+  col: number,
+  row: number,
+  rotated?: boolean
+): StoreResult & { gridCol: number; gridRow: number; w: number; h: number } {
+  const bad = (message: string): StoreResult & { gridCol: number; gridRow: number; w: number; h: number } => ({
+    ok: false,
+    message,
+    gridCol: 0,
+    gridRow: 0,
+    w: 1,
+    h: 1
+  })
+  const found = findItemDeep(itemId)
+  const target = holderOf(targetHolderId)
+  if (!found || !target) return bad('Item not found.')
+  const { item } = found
+  if (target.id === item.id || containsDeep(item, target.id))
+    return bad('A bag cannot be put inside itself.')
+  const { spec } = section
+  const size = sizeOf(item.itemData, rotated ?? item.gridRotated)
+  // everything already in that section except the item being moved
+  const others = section.entries.filter((e) => e.id !== itemId)
+  if (isBox(spec.kind)) {
+    if (others.length > 0) return bad(`${spec.caption} is already occupied.`)
+    return { ok: true, message: '', gridCol: 0, gridRow: 0, ...size }
+  }
+  if (col < 0 || row < 0 || col + size.w > spec.w || row + size.h > spec.h)
+    return bad(`Does not fit there in ${spec.caption}.`)
+  const taken = cellsTaken(others)
+  for (let r = row; r < row + size.h; r++)
+    for (let c = col; c < col + size.w; c++)
+      if (taken.has(`${c},${r}`)) return bad('That spot is taken.')
+  return { ok: true, message: '', gridCol: col, gridRow: row, ...size }
+}
+
 /**
  * Moves a stored item to another slot or grid cell, in the same bag or in another one.
  * `col`/`row` are the top-left cell inside an open grid (ignored for boxes).
@@ -279,39 +319,24 @@ export function moveStoredItem(
   targetHolderId: string,
   section: StorageSection,
   col: number,
-  row: number
+  row: number,
+  rotated?: boolean
 ): StoreResult {
+  const check = checkStoredMove(itemId, targetHolderId, section, col, row, rotated)
+  if (!check.ok) return check
   const found = findItemDeep(itemId)
   const target = holderOf(targetHolderId)
   if (!found || !target) return { ok: false, message: 'Item not found.' }
   const { item } = found
-  if (target.id === item.id || containsDeep(item, target.id))
-    return { ok: false, message: 'A bag cannot be put inside itself.' }
   const { spec } = section
-  // everything already in that section except the item being moved
-  const others = section.entries.filter((e) => e.id !== itemId)
-  let gridCol = 0
-  let gridRow = 0
-  if (isBox(spec.kind)) {
-    if (others.length > 0) return { ok: false, message: `${spec.caption} is already occupied.` }
-  } else {
-    const size = sizeOf(item.itemData, item.gridRotated)
-    if (col < 0 || row < 0 || col + size.w > spec.w || row + size.h > spec.h)
-      return { ok: false, message: `Does not fit there in ${spec.caption}.` }
-    const taken = cellsTaken(others)
-    for (let r = row; r < row + size.h; r++)
-      for (let c = col; c < col + size.w; c++)
-        if (taken.has(`${c},${r}`)) return { ok: false, message: 'That spot is taken.' }
-    gridCol = col
-    gridRow = row
-  }
   const sameOwner = found.owner === target.storage
   if (!sameOwner) {
     found.owner.splice(found.owner.indexOf(item), 1)
     target.storage.push(item)
   }
   item.slot = spec.key
-  item.gridPosition = { x: gridCol * CELL, y: gridRow * CELL }
+  item.gridPosition = { x: check.gridCol * CELL, y: check.gridRow * CELL }
+  if (rotated !== undefined && !isBox(spec.kind)) item.gridRotated = rotated
   markDirty()
   const warn =
     isBox(spec.kind) &&

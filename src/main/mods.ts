@@ -368,9 +368,17 @@ export function parseTetrisScene(text: string): ModLayout | null {
     const texId = /^ExtResource\(\s*"?([^")]+)"?\s*\)$/.exec(props.texture ?? '')?.[1]
     const texture = texId ? ext.get(texId) : undefined
     if (!position) {
-      // A Sprite2D left at the origin is a layer the size of the weapon icon (G28-style overlays)
+      // A Sprite2D left at the origin sits in the middle of the icon (G28-style full-size layers);
+      // its size is the texture's own, times the node's scale
       if (/\btype="Sprite2D"/.test(head) && texture) {
-        overlays.push({ name, position: [0, 0], scale: 1, behind: false, texture, fill: true })
+        const scale = vec(props.scale)
+        overlays.push({
+          name,
+          position: vec(props.offset) ?? [0, 0],
+          scale: scale ? scale[0] : 1,
+          behind: props.show_behind_parent === 'true',
+          texture
+        })
       }
       continue
     }
