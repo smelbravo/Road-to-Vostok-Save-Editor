@@ -8,6 +8,8 @@ import InventoryPanel from './components/InventoryPanel.vue'
 import GearStoragePanel from './components/GearStoragePanel.vue'
 import FurniturePanel from './components/FurniturePanel.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
+import McmPanel from './components/McmPanel.vue'
+import ShelterPanel from './components/ShelterPanel.vue'
 import BackupsPanel from './components/BackupsPanel.vue'
 import ChangelogPanel from './components/ChangelogPanel.vue'
 import CatPanel from './components/CatPanel.vue'
@@ -72,11 +74,13 @@ onMounted(() => {
           <TabsTrigger value="character" :disabled="!!loadError">Character</TabsTrigger>
           <TabsTrigger value="inventory" :disabled="!!loadError">Inventory</TabsTrigger>
           <TabsTrigger value="storage" :disabled="!!loadError">Gear Storage</TabsTrigger>
+          <TabsTrigger value="shelter" :disabled="!!loadError">Shelter</TabsTrigger>
           <TabsTrigger value="furniture" :disabled="!!loadError">Furniture</TabsTrigger>
           <TabsTrigger value="cat" :disabled="!!loadError">Cat</TabsTrigger>
           <TabsTrigger value="world" :disabled="!!loadError || !world">World</TabsTrigger>
           <TabsTrigger value="quests" :disabled="!!loadError || !traders">Quests</TabsTrigger>
           <div class="w-px self-stretch bg-border" />
+          <TabsTrigger value="mcm">Mod Settings</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="backups">Backups</TabsTrigger>
           <TabsTrigger value="changelog">Changelog</TabsTrigger>
@@ -114,6 +118,15 @@ onMounted(() => {
       </TabsContent>
       <TabsContent v-else value="storage" class="flex-1 min-h-0 p-4 mt-0">
         <GearStoragePanel />
+      </TabsContent>
+
+      <TabsContent v-if="loadError" value="shelter" class="flex-1 min-h-0 p-4 mt-0">
+        <div class="text-sm text-muted-foreground max-w-xl">
+          <p class="text-red-500">{{ loadError }}</p>
+        </div>
+      </TabsContent>
+      <TabsContent v-else value="shelter" class="flex-1 min-h-0 p-4 mt-0">
+        <ShelterPanel />
       </TabsContent>
 
       <TabsContent v-if="loadError" value="furniture" class="flex-1 min-h-0 p-4 mt-0">
@@ -158,6 +171,10 @@ onMounted(() => {
       </TabsContent>
       <TabsContent v-else value="quests" class="flex-1 min-h-0 p-4 mt-0 overflow-auto">
         <QuestsPanel />
+      </TabsContent>
+
+      <TabsContent value="mcm" class="flex-1 min-h-0 p-4 mt-0">
+        <McmPanel />
       </TabsContent>
 
       <TabsContent value="settings" class="flex-1 min-h-0 p-4 mt-0 overflow-auto">

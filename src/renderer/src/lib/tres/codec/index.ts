@@ -2,6 +2,7 @@ import type { Property, TresFile, TresValue } from '../types'
 import { characterSchema, type CharacterResource } from './schemas/character'
 import { worldSchema, type WorldResource } from './schemas/world'
 import { tradersSchema, type TradersResource } from './schemas/traders'
+import { shelterSchema } from './schemas/shelter'
 
 export type { CharacterResource } from './schemas/character'
 export type { WorldResource } from './schemas/world'
@@ -10,6 +11,8 @@ export type { StoredSlotItem, SlotItemData } from './schemas/slotItem'
 export { characterSchema } from './schemas/character'
 export { worldSchema } from './schemas/world'
 export { tradersSchema } from './schemas/traders'
+export { shelterSchema, furnitureSchema, parseShelterLooseItems } from './schemas/shelter'
+export type { ShelterLooseItem } from './schemas/shelter'
 export { slotItemSchema } from './schemas/slotItem'
 export { f } from './fields'
 export { resource } from './resource'
@@ -36,6 +39,10 @@ export function serializeCharacter(data: CharacterResource, source: TresFile): T
   finalizeSubResources(tres, source)
   updateLoadSteps(tres)
   return tres
+}
+
+export function parseShelter(tres: TresFile) {
+  return shelterSchema.parse(tres.resource, { tres })
 }
 
 export function parseWorld(tres: TresFile): WorldResource {

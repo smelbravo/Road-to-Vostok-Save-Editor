@@ -31,6 +31,8 @@ interface SaveApi {
   scanMods(force?: boolean): Promise<ModScan>
   scanGameItems(force?: boolean): Promise<GameCatalog>
   scanGameTasks(force?: boolean): Promise<GameTaskScan>
+  listMcm(): Promise<{ dir: string; mods: { modId: string; files: { name: string; text: string }[] }[] }>
+  saveMcm(modId: string, fileName: string, text: string): Promise<void>
 
   // Backups
   listBackups(): Promise<BackupEntry[]>

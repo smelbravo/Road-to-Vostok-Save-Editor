@@ -9,6 +9,10 @@
 - **RTV Mod Manager**: mods in `mods/Library` are found too.
 - **Items from the game files**: the editor now reads item resources from `RTV.pck`, so items added by game updates show up without a new editor release. The reader is checked against the built-in catalog at startup; if it does not agree, only names derived from the file paths are used. Modded items from `.vmz` archives keep working as before.
 
+- **Mod Settings tab**: reads and edits the settings Mod Configuration Menu (MCM) saved for every mod (`user://MCM/<mod>/<profile>.ini`): toggles, numbers within their ranges, text, dropdowns, colors and vectors, grouped by category like the in-game menu, for the active profile or any other. Only the changed value is rewritten and the previous file is kept as `.ini.editor-backup`.
+- **Shelter tab**: shows what each shelter (Cabin, Attic, Classroom, Tent, Bunker) stores: every container with its items, the items lying around, with search. Read only.
+- **World**: time of day can be set.
+
 ### Fixes
 
 - Bipod attachments (G28) get their own slot in the weapon workbench.

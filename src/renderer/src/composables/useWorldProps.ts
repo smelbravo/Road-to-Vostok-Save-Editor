@@ -1,7 +1,7 @@
 import { world, markWorldDirty } from './saveEditorState'
 
 export function updateWorldProp(
-  key: 'difficulty' | 'season' | 'day' | 'weather',
+  key: 'difficulty' | 'season' | 'day' | 'weather' | 'time',
   value: number | string
 ): void {
   if (!world.value) return

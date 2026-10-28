@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { world } from '../composables/saveEditorState'
 import { updateWorldProp } from '../composables/useWorldProps'
 import {
@@ -30,6 +31,7 @@ import {
   Calendar,
   Check,
   Cloud,
+  Clock,
   House,
   Lock,
   LockOpen,
@@ -60,6 +62,20 @@ function getUnlockedCount(location: SafehouseLocation) {
   return SAFEHOUSES.filter(
     (safehouse) => safehouse.location === location && isSafehouseUnlocked(safehouse.name)
   ).length
+}
+
+/** The game keeps the time as hours x 100 (9.99 h -> 999): 14:30 is 1450 */
+const timeOfDay = computed(() => {
+  const hours = (world.value?.time ?? 0) / 100
+  const h = Math.floor(hours) % 24
+  const m = Math.min(59, Math.floor((hours - Math.floor(hours)) * 60))
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+})
+
+function onTimeInput(event: Event): void {
+  const m = /^(\d{1,2}):(\d{2})$/.exec((event.target as HTMLInputElement).value)
+  if (!m) return
+  updateWorldProp('time', (parseInt(m[1], 10) + parseInt(m[2], 10) / 60) * 100)
 }
 
 function onDayInput(event: Event): void {
@@ -241,6 +257,15 @@ function onDayInput(event: Event): void {
         step="1"
         @change="onDayInput"
       />
+    </div>
+
+    <!-- Time of day -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2">
+        <Clock class="h-4 w-4 text-muted-foreground" />
+        <label class="text-sm font-medium">Time of day</label>
+      </div>
+      <Input type="time" :model-value="timeOfDay" class="w-40" @change="onTimeInput" />
     </div>
 
     <!-- Weather -->

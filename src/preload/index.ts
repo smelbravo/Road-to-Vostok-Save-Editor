@@ -25,6 +25,12 @@ const api = {
   scanGameTasks: (force = false): Promise<GameTaskScan> =>
     ipcRenderer.invoke('mods:scan-tasks', force),
 
+  // Mod Configuration Menu settings (user://MCM/<mod>/<profile>.ini)
+  listMcm: (): Promise<{ dir: string; mods: { modId: string; files: { name: string; text: string }[] }[] }> =>
+    ipcRenderer.invoke('mcm:list'),
+  saveMcm: (modId: string, fileName: string, text: string): Promise<void> =>
+    ipcRenderer.invoke('mcm:save', modId, fileName, text),
+
   // Backups
   listBackups: (): Promise<BackupEntry[]> => ipcRenderer.invoke('backups:list'),
   restoreBackup: (folderName: string): Promise<void> =>
