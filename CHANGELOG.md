@@ -11,7 +11,9 @@
 
 - **Mod Settings tab**: reads and edits the settings Mod Configuration Menu (MCM) saved for every mod (`user://MCM/<mod>/<profile>.ini`): toggles, numbers within their ranges, text, dropdowns, colors and vectors, grouped by category like the in-game menu, for the active profile or any other. Only the changed value is rewritten and the previous file is kept as `.ini.editor-backup`.
 - **Shelter tab**: shows what each shelter (Cabin, Attic, Classroom, Tent, Bunker) stores: every container with its items, the items lying around, with search. Read only.
-- **World**: time of day can be set.
+- **World**: time of day can be set; the Garage shelter can be unlocked and teleported to.
+- **Shelter edit mode**: change condition and quantity, remove items and add items to any container, then Save edits (the save is backed up first). Loose items are still read only.
+- **Mod Settings**: pick the profile (the active one by default); only mods that have settings for that profile, and are not switched off in the active one, are listed.
 - **Gear Storage**: a chevron on stored weapons (gun slots) opens a weapon picker, like the equipment slots, with "None" to empty the slot.
 - **Backups**: each backup has a Delete button and there is a Delete all button (both ask for a second click to confirm).
 

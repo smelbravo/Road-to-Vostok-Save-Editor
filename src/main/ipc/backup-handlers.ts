@@ -11,7 +11,8 @@ const MANAGED_SAFEHOUSE_FILES = [
   'Attic.tres',
   'Classroom.tres',
   'Tent.tres',
-  'Bunker.tres'
+  'Bunker.tres',
+  'Garage.tres'
 ] as const
 
 function getBackupDir() {

@@ -144,12 +144,14 @@ export function freshSlotItem(
     gridRotated?: boolean
     nestedPaths?: string[]
     slot?: string
+    /** Pick the sub-resource id against this file instead of the open character */
+    idSource?: TresFile
   }
 ): SlotItemData {
   const meta = ITEMS_META.get(resourcePath)
   return {
-    id: tresFile.value
-      ? newSubResourceId(tresFile.value)
+    id: (opts.idSource ?? tresFile.value)
+      ? newSubResourceId((opts.idSource ?? tresFile.value) as TresFile)
       : 'Resource_' + Math.random().toString(36).slice(2, 7),
     script: 'res://Scripts/SlotData.gd',
     itemData: resourcePath,

@@ -1,14 +1,75 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { shelters, sheltersLoading, sheltersError, loadShelters } from '../composables/useShelters'
+import {
+  shelters,
+  sheltersLoading,
+  sheltersError,
+  loadShelters,
+  shelterEditing,
+  sheltersDirty,
+  updateShelterItem,
+  removeShelterItem,
+  addShelterItem,
+  saveShelterEdits
+} from '../composables/useShelters'
+import { editableFields } from '../composables/useGearStorage'
+import { useToast } from '../composables/useToast'
 import { ITEMS_BY_PATH } from '../data/items'
+import { allItems } from '../data/mod-items'
+import { Trash2 } from 'lucide-vue-next'
 import type { SlotItemData } from '../lib/tres/codec'
 import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
 import ItemIcon from './ItemIcon.vue'
 
 const search = ref('')
+const toast = useToast()
 onMounted(loadShelters)
+
+// Edit mode: edits stay in memory until "Save edits"
+const addQuery = ref<Record<string, string>>({})
+const addError = ref<Record<string, string>>({})
+
+function suggestions(key: string) {
+  const q = (addQuery.value[key] ?? '').trim().toLowerCase()
+  if (q.length < 2) return []
+  return allItems.value
+    .filter(
+      (i) =>
+        i.category !== 'Furniture' &&
+        (i.displayName.toLowerCase().includes(q) || i.category.toLowerCase().includes(q))
+    )
+    .slice(0, 8)
+}
+
+function add(fileName: string, furnitureId: string, itemPath: string): void {
+  const error = addShelterItem(fileName, furnitureId, itemPath)
+  addError.value[furnitureId] = error ?? ''
+  if (!error) addQuery.value[furnitureId] = ''
+}
+
+function setNumber(
+  fileName: string,
+  item: SlotItemData,
+  field: 'condition' | 'amount',
+  value: string | number
+): void {
+  const n = Math.max(0, Math.round(Number(value)))
+  if (Number.isFinite(n)) updateShelterItem(fileName, item, { [field]: n })
+}
+
+async function saveEdits(): Promise<void> {
+  try {
+    const n = await saveShelterEdits()
+    toast.show(`Saved ${n} shelter file${n === 1 ? '' : 's'}`)
+  } catch (e) {
+    toast.show(`Saving shelters failed: ${e instanceof Error ? e.message : e}`)
+  }
+}
+
+async function discardEdits(): Promise<void> {
+  await loadShelters()
+}
 
 function nameOf(path: string): string {
   return (
@@ -69,12 +130,27 @@ const views = computed(() =>
       <Button variant="outline" size="sm" class="h-7 text-xs" :disabled="sheltersLoading" @click="loadShelters">
         {{ sheltersLoading ? 'Reading…' : 'Reload' }}
       </Button>
+      <Button
+        :variant="shelterEditing ? 'default' : 'outline'"
+        size="sm"
+        class="h-7 text-xs"
+        @click="shelterEditing = !shelterEditing"
+      >
+        {{ shelterEditing ? 'Exit edit mode' : 'Edit mode' }}
+      </Button>
+      <template v-if="shelterEditing && sheltersDirty">
+        <Button size="sm" class="h-7 text-xs" @click="saveEdits">Save edits</Button>
+        <Button variant="outline" size="sm" class="h-7 text-xs" @click="discardEdits">
+          Discard
+        </Button>
+      </template>
       <div class="flex-1" />
       <Input v-model="search" placeholder="Search items" class="h-8 w-56 text-xs" />
     </div>
     <p class="text-xs text-muted-foreground">
-      What your shelters store: the contents of every container and the items lying around. This
-      view only reads the save. Furniture placement is edited in the Furniture tab.
+      What your shelters store: the contents of every container and the items lying around. Turn on
+      Edit mode to change condition and amount, remove items or add items to a container.
+      Furniture placement is edited in the Furniture tab. Close the game before saving.
     </p>
 
     <p v-if="sheltersError" class="text-sm text-destructive">{{ sheltersError }}</p>
@@ -112,15 +188,70 @@ const views = computed(() =>
             <li v-for="it in c.items" :key="it.id" class="flex items-center gap-2 text-xs">
               <ItemIcon :icon-file="iconOf(it.itemData)" class="h-6 w-9" />
               <span>{{ nameOf(it.itemData) }}</span>
-              <span v-if="it.amount > 1" class="text-green-400">× {{ it.amount }}</span>
-              <span v-if="it.condition > 0 && it.condition < 100" class="text-muted-foreground">
-                {{ it.condition }}%
-              </span>
+              <template v-if="shelterEditing">
+                <template v-if="editableFields(it.itemData).condition">
+                  <label class="text-muted-foreground">Cond.</label>
+                  <Input
+                    :model-value="Math.round(it.condition)"
+                    type="number"
+                    min="0"
+                    max="100"
+                    class="h-6 w-16 text-xs"
+                    @update:model-value="(val) => setNumber(v.shelter.fileName, it, 'condition', val)"
+                  />
+                </template>
+                <template v-if="editableFields(it.itemData).amount">
+                  <label class="text-muted-foreground">Qty</label>
+                  <Input
+                    :model-value="it.amount"
+                    type="number"
+                    min="0"
+                    :max="editableFields(it.itemData).maxAmount"
+                    class="h-6 w-16 text-xs"
+                    @update:model-value="(val) => setNumber(v.shelter.fileName, it, 'amount', val)"
+                  />
+                </template>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-6 px-1.5 text-red-400 hover:text-red-300"
+                  title="Remove"
+                  @click="removeShelterItem(v.shelter.fileName, c.key, it.id)"
+                >
+                  <Trash2 class="h-3.5 w-3.5" />
+                </Button>
+              </template>
+              <template v-else>
+                <span v-if="it.amount > 1" class="text-green-400">× {{ it.amount }}</span>
+                <span v-if="it.condition > 0 && it.condition < 100" class="text-muted-foreground">
+                  {{ it.condition }}%
+                </span>
+              </template>
               <span v-if="it.nested.length > 0" class="text-muted-foreground">
                 + {{ it.nested.map(nameOf).join(', ') }}
               </span>
             </li>
             <li v-if="c.items.length === 0" class="text-xs text-muted-foreground">Empty</li>
+            <li v-if="shelterEditing" class="pt-1 space-y-1">
+              <Input
+                v-model="addQuery[c.key]"
+                placeholder="Add an item (type 2+ letters)"
+                class="h-7 text-xs"
+              />
+              <div v-if="suggestions(c.key).length" class="flex flex-wrap gap-1">
+                <Button
+                  v-for="i in suggestions(c.key)"
+                  :key="i.resourcePath"
+                  variant="outline"
+                  size="sm"
+                  class="h-6 text-xs"
+                  @click="add(v.shelter.fileName, c.key, i.resourcePath)"
+                >
+                  {{ i.displayName }}
+                </Button>
+              </div>
+              <p v-if="addError[c.key]" class="text-xs text-red-400">{{ addError[c.key] }}</p>
+            </li>
           </ul>
         </details>
 

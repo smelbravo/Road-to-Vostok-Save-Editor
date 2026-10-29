@@ -41,8 +41,18 @@ export function serializeCharacter(data: CharacterResource, source: TresFile): T
   return tres
 }
 
+export type ShelterResource = ReturnType<typeof parseShelter>
+
 export function parseShelter(tres: TresFile) {
   return shelterSchema.parse(tres.resource, { tres })
+}
+
+export function serializeShelter(data: ShelterResource, source: TresFile): TresFile {
+  const tres = cloneTresFile(source)
+  tres.resource = shelterSchema.serialize(data, source.resource, { tres })
+  finalizeSubResources(tres, source)
+  updateLoadSteps(tres)
+  return tres
 }
 
 export function parseWorld(tres: TresFile): WorldResource {

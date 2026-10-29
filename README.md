@@ -16,8 +16,8 @@ A desktop save file editor for [Road to Vostok](https://store.steampowered.com/a
 - Items added by installed mods get their real name, size, category and icon (png/jpg/webp, `.ctex`, and `.res` textures including compressed ones), and can be filtered with the **Modded** chip when adding items.
 - Gear Storage items have the same right-click menu as the inventory.
 - Gear Storage weapons can be swapped for another weapon from a chevron picker; old backups can be deleted from the Backups tab.
-- Mod Settings tab: edit the settings Mod Configuration Menu (MCM) saved for each mod, per profile.
-- Shelter tab: browse what every shelter stores (containers and loose items), with search.
+- Mod Settings tab: edit the settings Mod Configuration Menu (MCM) saved for each mod, for the active profile or any other.
+- Shelter tab: browse what every shelter stores, with search, and edit it in Edit mode (condition, quantity, remove, add). Garage can be unlocked in World.
 - Modded weapons show their equipped attachments on the icon and can be edited in the weapon workbench; compatibility and positions are read from the mod's own files.
 
 See [CHANGELOG.md](CHANGELOG.md).

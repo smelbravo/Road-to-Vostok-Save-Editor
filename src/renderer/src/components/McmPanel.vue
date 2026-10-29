@@ -23,14 +23,40 @@ const search = ref('')
 const selectedMod = ref('')
 const selectedFile = ref('')
 
-const activeFile = computed(() => {
-  const p = modScan.value?.activeProfile
-  return !p || p === 'Default' ? 'config.ini' : `${p}.ini`
+const iniOf = (profile: string): string =>
+  !profile || profile === 'Default' ? 'config.ini' : `${profile}.ini`
+
+const activeProfile = computed(() => modScan.value?.activeProfile || 'Default')
+const activeFile = computed(() => iniOf(activeProfile.value))
+
+// Profile whose settings are shown; the active one unless another is picked
+const pickedProfile = ref('')
+const profile = computed(() => pickedProfile.value || activeProfile.value)
+const profileFile = computed(() => iniOf(profile.value))
+
+const profileNames = computed(() => {
+  const names = new Set<string>(['Default', ...(modScan.value?.profiles ?? [])])
+  for (const m of mcmMods.value)
+    for (const f of m.files) names.add(f.name === 'config.ini' ? 'Default' : f.name.replace(/\.ini$/, ''))
+  names.add(activeProfile.value)
+  return [...names]
 })
+
+/** Only mods that have settings for the shown profile and are not switched off in the active one */
+const profileMods = computed(() =>
+  mcmMods.value.filter((m) => {
+    if (!m.files.some((f) => f.name.toLowerCase() === profileFile.value.toLowerCase())) return false
+    if (profile.value !== activeProfile.value) return true
+    const installed = installedMods.value.filter(
+      (i) => i.id.toLowerCase() === m.modId.toLowerCase() || i.name.toLowerCase() === m.modId.toLowerCase()
+    )
+    return installed.length === 0 || installed.some((i) => i.enabled !== false)
+  })
+)
 
 const visibleMods = computed(() => {
   const q = search.value.trim().toLowerCase()
-  return mcmMods.value.filter(
+  return profileMods.value.filter(
     (m) => !q || m.modId.toLowerCase().includes(q) || friendlyName(m.modId).toLowerCase().includes(q)
   )
 })
@@ -48,22 +74,24 @@ function chooseMod(modId: string): void {
   selectedMod.value = modId
   const files = mcmMods.value.find((m) => m.modId === modId)?.files ?? []
   selectedFile.value =
-    files.find((f) => f.name === activeFile.value)?.name ??
-    files.find((f) => f.name === 'config.ini')?.name ??
-    files[0]?.name ??
-    ''
+    files.find((f) => f.name.toLowerCase() === profileFile.value.toLowerCase())?.name ?? ''
 }
 
-watch(
-  () => mcmMods.value,
-  (mods) => {
-    if (!mods.some((m) => m.modId === selectedMod.value) && mods[0]) chooseMod(mods[0].modId)
+watch([profileMods, profileFile], () => {
+  const mods = profileMods.value
+  if (mods.some((m) => m.modId === selectedMod.value)) {
+    chooseMod(selectedMod.value)
+  } else if (mods[0]) {
+    chooseMod(mods[0].modId)
+  } else {
+    selectedMod.value = ''
+    selectedFile.value = ''
   }
-)
+})
 
 onMounted(async () => {
   await loadMcm()
-  if (mcmMods.value[0] && !selectedMod.value) chooseMod(mcmMods.value[0].modId)
+  if (profileMods.value[0] && !selectedMod.value) chooseMod(profileMods.value[0].modId)
 })
 
 const groups = computed(() =>
@@ -140,6 +168,17 @@ async function save(): Promise<void> {
       <Button variant="outline" size="sm" class="h-7 text-xs" :disabled="mcmLoading" @click="loadMcm">
         {{ mcmLoading ? 'Reading…' : 'Reload' }}
       </Button>
+      <label class="text-xs text-muted-foreground">Profile</label>
+      <select
+        class="h-7 rounded-md border border-input bg-background px-2 text-xs"
+        :value="profile"
+        @change="pickedProfile = ($event.target as HTMLSelectElement).value"
+      >
+        <option v-for="n in profileNames" :key="n" :value="n">
+          {{ n }}{{ n === activeProfile ? ' (active)' : '' }}
+        </option>
+      </select>
+      <span class="text-xs text-muted-foreground">{{ profileMods.length }} mods</span>
     </div>
     <p class="text-xs text-muted-foreground">
       Settings that Mod Configuration Menu saved for each mod. Close the game before saving: it
@@ -149,10 +188,10 @@ async function save(): Promise<void> {
 
     <p v-if="mcmError" class="text-sm text-destructive">{{ mcmError }}</p>
     <div
-      v-else-if="!mcmLoading && mcmMods.length === 0"
+      v-else-if="!mcmLoading && profileMods.length === 0"
       class="flex-1 flex items-center justify-center text-sm text-muted-foreground text-center"
     >
-      No MCM settings found{{ mcmDir ? ` in ${mcmDir}` : '' }}. They appear after a mod that uses
+      No MCM settings found for the "{{ profile }}" profile{{ mcmDir ? ` in ${mcmDir}` : '' }}. They appear after a mod that uses
       Mod Configuration Menu has run in the game once.
     </div>
 
@@ -179,17 +218,9 @@ async function save(): Promise<void> {
       <div v-if="mod" class="flex-1 min-w-0 min-h-0 overflow-auto pr-1 space-y-4">
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-sm font-medium">{{ friendlyName(mod.modId) }}</span>
-          <select
-            v-if="mod.files.length > 1"
-            v-model="selectedFile"
-            class="h-7 rounded-md border border-input bg-background px-2 text-xs"
-            title="Profile"
-          >
-            <option v-for="f in mod.files" :key="f.name" :value="f.name">
-              {{ f.name.replace(/\.ini$/, '') }}{{ f.name === activeFile ? ' (active profile)' : '' }}
-            </option>
-          </select>
-          <span v-else class="text-xs text-muted-foreground">{{ selectedFile }}</span>
+          <span class="text-xs text-muted-foreground">
+            {{ profile }}{{ selectedFile === activeFile ? ' (active profile)' : '' }}
+          </span>
           <div class="flex-1" />
           <Button v-if="dirty" variant="outline" size="sm" class="h-7 text-xs" @click="revert(selectedMod, selectedFile)">
             Revert
