@@ -35,6 +35,8 @@ const api = {
   listBackups: (): Promise<BackupEntry[]> => ipcRenderer.invoke('backups:list'),
   restoreBackup: (folderName: string): Promise<void> =>
     ipcRenderer.invoke('backups:restore', folderName),
+  deleteBackups: (folderNames: string[]): Promise<void> =>
+    ipcRenderer.invoke('backups:delete', folderNames),
   openBackupsDir: (): Promise<void> => ipcRenderer.invoke('backups:open-dir'),
 
   // Icons

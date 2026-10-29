@@ -8,6 +8,7 @@ import {
   moveStoredItem,
   checkStoredMove,
   removeStoredItem,
+  replaceStoredItem,
   rotateStoredItem,
   updateStoredItem,
   type StorageContainer,
@@ -17,7 +18,7 @@ import {
 import { gseDisabled, gseMod, modScan } from '../composables/useMods'
 import { useToast } from '../composables/useToast'
 import { ITEMS_BY_PATH } from '../data/items'
-import { isBox } from '../data/gse'
+import { boxAccepts, isBox } from '../data/gse'
 import { WEAPON_ATTACHMENT_LAYOUTS } from '../data/weapon-attachments'
 import type { SlotItem } from '../lib/types'
 import ItemIcon from './ItemIcon.vue'
@@ -30,7 +31,18 @@ import type { AttachmentRemoveOption } from '../lib/types'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Input } from '../components/ui/input'
-import { Plus, Trash2, ArrowDownToLine, RotateCw, TriangleAlert } from 'lucide-vue-next'
+import {
+  Plus,
+  Trash2,
+  ArrowDownToLine,
+  RotateCw,
+  TriangleAlert,
+  ChevronDown
+} from 'lucide-vue-next'
+import { Popover } from '../components/ui/popover'
+import PopoverContent from '../components/ui/popover/PopoverContent.vue'
+import { PopoverAnchor } from 'reka-ui'
+import { allItems } from '../data/mod-items'
 
 const CELL_UI = 44
 
@@ -198,6 +210,29 @@ function onPointerUp(): void {
   if (!t) return
   const result = moveStoredItem(d.entry.id, t.holderId, t.section, t.col, t.row, d.rotated)
   if (!result.ok || result.message) toast.show(result.message, 'error')
+}
+
+// Weapon picker: the chevron on a stored weapon swaps it for another one, like the equipment slots
+const pickerFor = ref<string | null>(null)
+
+function weaponChoices(section: StorageSection) {
+  return allItems.value
+    .filter(
+      (i) =>
+        i.category === 'Weapons' &&
+        boxAccepts(section.spec.kind, {
+          path: i.resourcePath,
+          category: i.category,
+          slots: i.slots ?? []
+        })
+    )
+    .sort((a, b) => a.displayName.localeCompare(b.displayName))
+}
+
+function pickWeapon(entry: StoredEntry, path: string | null): void {
+  pickerFor.value = null
+  if (selectedId.value === entry.id) selectedId.value = null
+  replaceStoredItem(entry.id, path)
 }
 
 function onEntryClick(entry: StoredEntry): void {
@@ -485,6 +520,54 @@ const statusLine = computed(() => {
                 <span v-else class="text-[10px] leading-tight text-center px-0.5 break-words">
                   {{ entry.item.nameInventory }}
                 </span>
+                <Popover
+                  v-if="isBox(section.spec.kind) && entry.item.category === 'Weapons'"
+                  :open="pickerFor === entry.id"
+                  @update:open="(v) => (pickerFor = v ? entry.id : null)"
+                >
+                  <PopoverAnchor as-child>
+                    <span
+                      class="absolute top-0 right-0 z-10 flex items-center justify-center w-4 h-4 rounded-bl-sm bg-muted/80 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      title="Pick another weapon"
+                      @pointerdown.stop
+                      @click.stop="pickerFor = pickerFor === entry.id ? null : entry.id"
+                    >
+                      <ChevronDown class="w-3 h-3" />
+                    </span>
+                  </PopoverAnchor>
+                  <PopoverContent :collision-padding="12" class="max-h-[400px] overflow-y-auto">
+                    <div class="flex flex-wrap gap-2 w-[344px]">
+                      <button
+                        class="flex items-center justify-center w-20 h-20 rounded-md border border-border hover:bg-accent"
+                        @click="pickWeapon(entry, null)"
+                      >
+                        <span class="text-xs text-muted-foreground">None</span>
+                      </button>
+                      <button
+                        v-for="w in weaponChoices(section)"
+                        :key="w.resourcePath"
+                        class="relative w-20 h-20 rounded-md border transition-colors overflow-hidden"
+                        :class="
+                          w.resourcePath === entry.item.itemPath
+                            ? 'border-primary ring-1 ring-primary bg-accent'
+                            : 'border-border hover:bg-accent'
+                        "
+                        @click="pickWeapon(entry, w.resourcePath)"
+                      >
+                        <img
+                          v-if="w.iconFile"
+                          :src="`app-icon:///${encodeURIComponent(w.iconFile + '.png')}`"
+                          class="w-full h-full object-contain p-1.5"
+                          draggable="false"
+                        />
+                        <span
+                          class="absolute bottom-0 left-0 right-0 text-[10px] leading-none text-foreground/80 text-center pb-[3px] truncate px-[3px]"
+                          >{{ w.displayName }}</span
+                        >
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <span
                   v-if="entry.item.showAmount && entry.item.amount > 0"
                   class="absolute bottom-0 right-0 text-[10px] leading-none text-green-400 px-0.5"

@@ -142,6 +142,16 @@ export function registerBackupHandlers(): void {
     }
   })
 
+  ipcMain.handle('backups:delete', async (_event, folderNames: string[]) => {
+    const backupDir = getBackupDir()
+    for (const folderName of folderNames) {
+      if (folderName !== folderName.replace(/[/\\]/g, '') || folderName.includes('..'))
+        throw new Error(`Invalid backup folder name: ${folderName}`)
+      if (!belongsToSource(folderName)) throw new Error('Backup belongs to another save source')
+      await rm(join(backupDir, folderName), { recursive: true, force: true })
+    }
+  })
+
   ipcMain.handle('backups:open-dir', async () => {
     const backupDir = getBackupDir()
     await mkdir(backupDir, { recursive: true })

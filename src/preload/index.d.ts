@@ -37,6 +37,7 @@ interface SaveApi {
   // Backups
   listBackups(): Promise<BackupEntry[]>
   restoreBackup(folderName: string): Promise<void>
+  deleteBackups(folderNames: string[]): Promise<void>
   openBackupsDir(): Promise<void>
 
   // Icons

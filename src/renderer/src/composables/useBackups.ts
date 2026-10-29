@@ -22,9 +22,14 @@ export function useBackups() {
     await loadBackups()
   }
 
+  async function deleteBackups(folderNames: string[]) {
+    await window.api.deleteBackups(folderNames)
+    await loadBackups()
+  }
+
   function openBackupsDir() {
     window.api.openBackupsDir()
   }
 
-  return { backups, isLoading, loadBackups, restoreBackup, openBackupsDir }
+  return { backups, isLoading, loadBackups, restoreBackup, deleteBackups, openBackupsDir }
 }

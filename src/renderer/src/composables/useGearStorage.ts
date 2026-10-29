@@ -378,6 +378,30 @@ export function removeStoredItem(itemId: string): void {
   markDirty()
 }
 
+/** Swaps a stored weapon for another one in the same slot (null removes it). */
+export function replaceStoredItem(itemId: string, newPath: string | null): void {
+  const found = findItemDeep(itemId)
+  if (!found) return
+  const index = found.owner.indexOf(found.item)
+  if (!newPath) {
+    found.owner.splice(index, 1)
+    markDirty()
+    return
+  }
+  const old = found.item
+  found.owner.splice(
+    index,
+    1,
+    freshSlotItem(newPath, {
+      gridCol: Math.round(old.gridPosition.x / CELL),
+      gridRow: Math.round(old.gridPosition.y / CELL),
+      gridRotated: old.gridRotated,
+      slot: old.slot
+    })
+  )
+  markDirty()
+}
+
 export function updateStoredItem(
   itemId: string,
   updates: { condition?: number; amount?: number }

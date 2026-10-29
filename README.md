@@ -15,6 +15,7 @@ A desktop save file editor for [Road to Vostok](https://store.steampowered.com/a
 - **Gear Storage** tab: edit what is stored in backpacks, rigs and clothing with Gear Storage Expansion (gun slots, magazine pouches, medical pouches, open grids).
 - Items added by installed mods get their real name, size, category and icon (png/jpg/webp, `.ctex`, and `.res` textures including compressed ones), and can be filtered with the **Modded** chip when adding items.
 - Gear Storage items have the same right-click menu as the inventory.
+- Gear Storage weapons can be swapped for another weapon from a chevron picker; old backups can be deleted from the Backups tab.
 - Mod Settings tab: edit the settings Mod Configuration Menu (MCM) saved for each mod, per profile.
 - Shelter tab: browse what every shelter stores (containers and loose items), with search.
 - Modded weapons show their equipped attachments on the icon and can be edited in the weapon workbench; compatibility and positions are read from the mod's own files.
