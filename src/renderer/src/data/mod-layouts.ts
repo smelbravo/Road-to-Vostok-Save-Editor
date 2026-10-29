@@ -101,9 +101,16 @@ export function registerModAttachmentSubtypes(items: ModWeaponInput[]): void {
 export function registerModWeaponLayouts(items: ModWeaponInput[]): void {
   // Attachments by name ("SV98_Scope"), so scene nodes can be tied to the items they draw
   const attachments = items.filter((i) => i.category === 'Attachments')
+  // Vanilla attachments too: a mod scene places them with its own position and scale
+  const vanilla = new Map<string, string>()
+  for (const [path, item] of ITEMS_BY_PATH) {
+    if (item.category !== 'Attachments' || item.modded) continue
+    vanilla.set(item.id, path)
+    vanilla.set(stemOf(path), path)
+  }
   const lookup = (name: string, modId?: string): string | undefined => {
     const hits = attachments.filter((a) => a.id === name || stemOf(a.resourcePath) === name)
-    return (hits.find((a) => a.modId === modId) ?? hits[0])?.resourcePath
+    return (hits.find((a) => a.modId === modId) ?? hits[0])?.resourcePath ?? vanilla.get(name)
   }
 
   for (const weapon of items) {

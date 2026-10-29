@@ -16,6 +16,8 @@
 ### Fixes
 
 - Bipod attachments (G28) get their own slot in the weapon workbench.
+- Modded weapon scenes that place vanilla attachments (ACOG, suppressors, ...) with their own position and scale are now followed, instead of using the base weapon's layout, which drew them too small or in the wrong place.
+- Shelter tab shows every shelter file in the save, including ones added by game updates (Garage).
 - Modded icons no longer overwrite each other: mods that name every icon `Icon.res` (NARK firearms and melee) now show the right icon per item (M45A1, Beretta 92FS, knives).
 - Equipped attachments the weapon layout does not list (e.g. a vanilla suppressor or scope on a modded rifle) always get a slot in Edit Loadout and are drawn where the weapon's other attachments of that kind go.
 - Edit Loadout slot buttons on the same edge no longer overlap.
