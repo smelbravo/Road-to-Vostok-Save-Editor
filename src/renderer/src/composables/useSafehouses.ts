@@ -7,7 +7,7 @@ export const SAFEHOUSES = [
   { name: 'Classroom', location: 'School', fileName: 'Classroom.tres', requiresUnlock: true },
   { name: 'Tent', location: 'Outpost', fileName: 'Tent.tres', requiresUnlock: false },
   { name: 'Bunker', location: 'Outpost', fileName: 'Bunker.tres', requiresUnlock: true },
-  { name: 'Garage', location: 'Garage', fileName: 'Garage.tres', requiresUnlock: true }
+  { name: 'Garage', location: 'Highway', fileName: 'Garage.tres', requiresUnlock: true }
 ] as const
 
 export type SafehouseName = (typeof SAFEHOUSES)[number]['name']
