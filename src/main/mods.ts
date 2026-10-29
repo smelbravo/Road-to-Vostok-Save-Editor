@@ -18,6 +18,9 @@ const inflateRawAsync = promisify(inflateRaw)
  * Nothing here ever writes to the mods folder.
  */
 
+/** Items each scanned archive contributed, so copies the active profile does not load can be dropped */
+const itemsOfMod = new WeakMap<InstalledMod, ModItem[]>()
+
 export interface InstalledMod {
   /** Archive name inside the mods folder */
   file: string
@@ -633,6 +636,7 @@ async function scanFolder(
       // the same mod can sit in mods/ and mods/Library: keep one entry, prefer mods/
       if (result.mods.some((m) => m.id === mod.id && m.version === mod.version)) continue
       result.mods.push(mod)
+      itemsOfMod.set(mod, items)
       result.items.push(...items)
     } catch (e) {
       result.warnings.push(`${name}: ${e instanceof Error ? e.message : 'unreadable'}`)
@@ -676,6 +680,29 @@ export async function scanMods(opts: ScanOptions): Promise<Omit<ModScan, 'modsDi
     // Library copies are only loaded when a profile enables them; loose files in mods/ are
     // loaded unless a profile switches them off.
     if (mod.enabled === null && mod.location === 'library' && state.enabled) mod.enabled = false
+  }
+
+  // Only what the active profile loads counts: items of switched-off copies (several versions of
+  // one mod can sit in the library) are dropped, and of copies sharing an id only one stays.
+  const exact = (m: InstalledMod): boolean => {
+    const stem = m.file.replace(/\.[^.]+$/, '')
+    return [`${m.id}@${m.version}`, m.file, stem].some((k) => state.enabled?.get(k) === true)
+  }
+  const kept = new Set<InstalledMod>()
+  for (const mod of result.mods) {
+    if (mod.enabled === false) continue
+    const rivals = result.mods.filter((m) => m.id === mod.id && m.enabled !== false)
+    if (rivals.length > 1 && state.enabled) {
+      const pick = rivals.find(exact) ?? rivals[0]
+      if (pick !== mod) {
+        mod.enabled = false
+        continue
+      }
+    }
+    kept.add(mod)
+  }
+  if (state.enabled) {
+    result.items = result.mods.filter((m) => kept.has(m)).flatMap((m) => itemsOfMod.get(m) ?? [])
   }
 
   if (opts.userDir) {
