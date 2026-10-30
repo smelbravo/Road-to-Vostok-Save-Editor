@@ -15,7 +15,7 @@ import {
 } from '../composables/useMcm'
 import { installedMods, modScan } from '../composables/useMods'
 import { useToast } from '../composables/useToast'
-import { godotFloat, godotString, parseMcm, plain, type McmSetting } from '../data/mcm'
+import { godotFloat, godotString, parseMcm, plain, settingsOf, type McmSetting } from '../data/mcm'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 
@@ -46,12 +46,15 @@ const profileNames = computed(() => {
 /** Only mods that have settings for the shown profile and are not switched off in the active one */
 const profileMods = computed(() =>
   mcmMods.value.filter((m) => {
-    if (!m.files.some((f) => f.name.toLowerCase() === profileFile.value.toLowerCase())) return false
-    if (profile.value !== activeProfile.value) return true
+    const hasFile = m.files.some((f) => f.name.toLowerCase() === profileFile.value.toLowerCase())
     const installed = installedMods.value.filter(
       (i) => i.id.toLowerCase() === m.modId.toLowerCase() || i.name.toLowerCase() === m.modId.toLowerCase()
     )
-    return installed.length === 0 || installed.some((i) => i.enabled !== false)
+    if (profile.value !== activeProfile.value) return hasFile
+    // Active profile: a mod the profile loads counts even when it only ever wrote config.ini
+    // (some mods ignore profiles), its other files are offered instead
+    if (installed.some((i) => i.enabled === true)) return true
+    return hasFile && (installed.length === 0 || installed.some((i) => i.enabled !== false))
   })
 )
 
@@ -75,7 +78,10 @@ function chooseMod(modId: string): void {
   selectedMod.value = modId
   const files = mcmMods.value.find((m) => m.modId === modId)?.files ?? []
   selectedFile.value =
-    files.find((f) => f.name.toLowerCase() === profileFile.value.toLowerCase())?.name ?? ''
+    files.find((f) => f.name.toLowerCase() === profileFile.value.toLowerCase())?.name ??
+    files.find((f) => f.name === 'config.ini')?.name ??
+    files[0]?.name ??
+    ''
 }
 
 watch([profileMods, profileFile], () => {
@@ -202,6 +208,15 @@ const diagnosis = computed(() => {
   return `${text.length} characters, ${entries.length} entries read (sections: ${sections}), ${lines} lines look like settings`
 })
 
+/** Files of the mod other than the open one that do hold settings (a mod that only ever wrote config.ini) */
+const otherFiles = computed(() => {
+  if (groups.value.length > 0 || !mod.value) return []
+  return mod.value.files
+    .filter((f) => f.name !== selectedFile.value)
+    .map((f) => ({ name: f.name, count: settingsOf(parseMcm(textOf(selectedMod.value, f.name))).length }))
+    .filter((f) => f.count > 0)
+})
+
 function shown(v: unknown): string {
   return JSON.stringify(v)
 }
@@ -274,7 +289,7 @@ async function save(): Promise<void> {
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-sm font-medium">{{ friendlyName(mod.modId) }}</span>
           <span class="text-xs text-muted-foreground">
-            {{ profile }}{{ selectedFile === activeFile ? ' (active profile)' : '' }}
+            {{ selectedFile }}{{ selectedFile === profileFile ? ` (${profile} profile)` : '' }}
           </span>
           <div class="flex-1" />
           <Button v-if="dirty" variant="outline" size="sm" class="h-7 text-xs" @click="revert(selectedMod, selectedFile)">
@@ -287,6 +302,19 @@ async function save(): Promise<void> {
           This file has no settings the editor can show.
           <span class="block text-xs">{{ diagnosis }}</span>
         </p>
+        <div v-if="otherFiles.length > 0" class="flex flex-wrap items-center gap-2 text-xs">
+          <span class="text-muted-foreground">Other files of this mod with settings:</span>
+          <Button
+            v-for="f in otherFiles"
+            :key="f.name"
+            variant="outline"
+            size="sm"
+            class="h-7 text-xs"
+            @click="selectedFile = f.name"
+          >
+            {{ f.name }} ({{ f.count }})
+          </Button>
+        </div>
 
         <div v-if="master" class="flex items-center gap-3 rounded-md border border-border/60 px-3 py-2">
           <input
