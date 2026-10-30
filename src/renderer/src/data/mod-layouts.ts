@@ -42,7 +42,9 @@ function guessPlacement(
     case 'Optic':
       return { position: [-0.18 * halfW, -0.62 * halfH], scale: 0.55 }
     case 'Muzzle':
-      return { position: [0.875 * halfW, -0.3 * halfH], scale: 0.5 }
+      // Measured on the in-game SVT-40: a suppressor starts where the weapon's art ends and
+      // hangs past it (the icon then shrinks to fit), it does not cover the muzzle
+      return { position: [1.1 * halfW, -0.35 * halfH], scale: 0.5 }
     case 'Laser':
       return { position: [0.26 * halfW, -0.58 * halfH], scale: 0.7 }
     default:

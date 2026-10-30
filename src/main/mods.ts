@@ -386,10 +386,15 @@ export function parseTetrisScene(text: string): ModLayout | null {
       continue
     }
     const scale = vec(props.scale)
+    // A built-in attachment tile dropped in without a scale keeps the 0.5 its own scene uses
+    // (the same value the built-in weapons' layouts carry); drawn at 1 it came out twice as big
+    const instId = /\binstance=ExtResource\(\s*"?([^")]+)"?\s*\)/.exec(head)?.[1]
+    const instPath = instId ? ext.get(instId) : undefined
+    const defaultScale = instPath?.startsWith('res://Items/Attachments/') ? 0.5 : 1
     overlays.push({
       name,
       position,
-      scale: scale ? scale[0] : 1,
+      scale: scale ? scale[0] : defaultScale,
       behind: props.show_behind_parent === 'true',
       ...(texture ? { texture } : {})
     })
