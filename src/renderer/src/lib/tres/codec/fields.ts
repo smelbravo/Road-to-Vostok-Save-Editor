@@ -125,6 +125,8 @@ export function extRef(
         if (sourcePath === current) return source
       }
       if (!source && current === opts.default && !opts.required) return null
+      // A reference this codec could not turn into a path (an embedded resource, a null) stays as it was
+      if (source && source.kind !== 'ext_resource' && current === opts.default) return source
       if (!current) return null
       const [id] = ensureExtIds(ctx, [current])
       return { kind: 'ext_resource', id }

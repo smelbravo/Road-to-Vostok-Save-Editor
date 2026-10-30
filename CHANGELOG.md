@@ -20,6 +20,8 @@
 
 ### Fixes
 
+- Mod Settings reads more kinds of values (StringName, `=` separators, unknown tokens), and an empty file now shows the first line the reader could not parse.
+- A reference to an item the editor cannot turn into a file path (modded furniture stored as an embedded resource) is kept as it was when saving instead of being dropped, and such rows get a clear name.
 - Mod Settings: mods the active profile loads show up even when they only wrote `config.ini` (mods that ignore profiles, like Elegant HUD); an empty profile file offers the mod's other files.
 - Mod Settings: settings stored without a saved value (only a default) are listed too, and a file that shows nothing now says what the reader found in it.
 - Modded weapon scenes (SVT-40, ...) that drop a built-in scope in without a scale now draw it at the built-in 0.5 instead of twice that size; suppressors a scene does not place are drawn at the end of the barrel, past the weapon's art (measured against the in-game SVT-40), instead of over the muzzle.

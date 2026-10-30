@@ -45,7 +45,8 @@ export function slotItemDataToSlotItem(data: SlotItemData): SlotItem {
     subResourceId: data.id,
     itemPath,
     itemName:
-      catalogItem?.displayName ?? itemPath.split('/').pop()?.replace('.tres', '') ?? 'Unknown',
+      catalogItem?.displayName ??
+      (itemPath.split('/').pop()?.replace(/\.(tres|res)$/, '') || 'Unknown item (not a file the editor can read)'),
     nameInventory: catalogItem?.nameInventory ?? catalogItem?.displayName ?? 'Unknown',
     nameRotated:
       catalogItem?.nameRotated ??

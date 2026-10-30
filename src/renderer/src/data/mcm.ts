@@ -55,8 +55,20 @@ class Reader {
         end: this.pos
       }
     }
+    // &"StringName" / ^"NodePath": the quoted text is the value
+    if ((ch === '&' || ch === '^') && t[start + 1] === '"') {
+      this.pos++
+      const s = this.string()
+      return { ...s, start } as McmNode
+    }
     const word = /^[A-Za-z_][A-Za-z0-9_]*/.exec(t.slice(start, start + 64))
-    if (!word) throw new Error(`Unexpected "${ch}" in settings`)
+    if (!word) {
+      // Something this reader does not know: keep the raw text up to the next separator
+      const raw = /^[^,}\])\n]+/.exec(t.slice(start))
+      if (!raw) throw new Error(`Unexpected "${ch}" in settings`)
+      this.pos += raw[0].length
+      return { kind: 'null', start, end: this.pos }
+    }
     this.pos += word[0].length
     if (word[0] === 'true' || word[0] === 'false')
       return { kind: 'bool', value: word[0] === 'true', start, end: this.pos }
@@ -126,7 +138,8 @@ class Reader {
     while (this.text[this.pos] !== '}') {
       const key = this.node()
       this.ws()
-      if (this.text[this.pos] !== ':') throw new Error('Expected ":" in settings')
+      if (this.text[this.pos] !== ':' && this.text[this.pos] !== '=')
+        throw new Error(`Expected ":" in settings, found "${this.text[this.pos] ?? 'end of file'}"`)
       this.pos++
       const value = this.node()
       entries.push({ key, value })
@@ -151,8 +164,15 @@ export interface McmEntry {
   end: number
 }
 
+/** What went wrong while reading, for the first few entries that did not parse */
+export interface McmReadProblem {
+  line: number
+  message: string
+  snippet: string
+}
+
 /** Reads every `id={...}` of an MCM file. Entries that do not parse are skipped. */
-export function parseMcm(text: string): McmEntry[] {
+export function parseMcm(text: string, problems?: McmReadProblem[]): McmEntry[] {
   const entries: McmEntry[] = []
   let section = ''
   let pos = 0
@@ -180,7 +200,13 @@ export function parseMcm(text: string): McmEntry[] {
         entries.push({ section, id: m[2].trim(), fields, start: value.start, end: value.end })
       }
       pos = Math.max(reader.pos, eol + 1)
-    } catch {
+    } catch (e) {
+      if (problems && problems.length < 3)
+        problems.push({
+          line: text.slice(0, pos).split('\n').length,
+          message: e instanceof Error ? e.message : 'unreadable',
+          snippet: line.slice(0, 80)
+        })
       pos = eol + 1
     }
   }

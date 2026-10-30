@@ -15,7 +15,15 @@ import {
 } from '../composables/useMcm'
 import { installedMods, modScan } from '../composables/useMods'
 import { useToast } from '../composables/useToast'
-import { godotFloat, godotString, parseMcm, plain, settingsOf, type McmSetting } from '../data/mcm'
+import {
+  godotFloat,
+  godotString,
+  parseMcm,
+  plain,
+  settingsOf,
+  type McmReadProblem,
+  type McmSetting
+} from '../data/mcm'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 
@@ -201,10 +209,12 @@ function colorSet(s: McmSetting, hex: string): void {
 /** Why a file shows nothing: what the reader found in it */
 const diagnosis = computed(() => {
   const text = textOf(selectedMod.value, selectedFile.value)
-  const entries = parseMcm(text)
+  const problems: McmReadProblem[] = []
+  const entries = parseMcm(text, problems)
   const lines = text.split('\n').filter((l) => /^\S[^=]*=\s*\{/.test(l)).length
   const sections = [...new Set(entries.map((e) => e.section))].join(', ') || 'none'
-  return `${text.length} characters, ${entries.length} entries read (sections: ${sections}), ${lines} lines look like settings`
+  const why = problems.map((p) => `line ${p.line}: ${p.message} (${p.snippet})`).join(' | ')
+  return `${text.length} characters, ${entries.length} entries read (sections: ${sections}), ${lines} lines look like settings${why ? '. First problems: ' + why : ''}`
 })
 
 /** Files of the mod other than the open one that do hold settings (a mod that only ever wrote config.ini) */
