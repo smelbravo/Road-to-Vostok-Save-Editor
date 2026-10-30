@@ -229,7 +229,7 @@ export interface McmSetting {
 
 export function settingsOf(entries: McmEntry[]): McmSetting[] {
   return entries
-    .filter((e) => e.section !== 'Category' && e.fields.has('value'))
+    .filter((e) => e.section !== 'Category' && (e.fields.has('value') || e.fields.has('default')))
     .map((entry) => {
       const f = entry.fields
       const str = (k: string): string => {
@@ -245,7 +245,7 @@ export function settingsOf(entries: McmEntry[]): McmSetting[] {
         tooltip: str('tooltip'),
         category: str('category'),
         menuPos: typeof plain(f.get('menu_pos')) === 'number' ? (plain(f.get('menu_pos')) as number) : 0,
-        value: plain(f.get('value')),
+        value: f.has('value') ? plain(f.get('value')) : plain(f.get('default')),
         defaultValue: plain(f.get('default')),
         min: plain(f.get('minRange')),
         max: plain(f.get('maxRange')),

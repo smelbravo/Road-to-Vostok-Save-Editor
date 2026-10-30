@@ -9,12 +9,13 @@ import {
   groupsOf,
   setValue,
   isDirty,
+  textOf,
   revert,
   saveFile
 } from '../composables/useMcm'
 import { installedMods, modScan } from '../composables/useMods'
 import { useToast } from '../composables/useToast'
-import { godotFloat, godotString, plain, type McmSetting } from '../data/mcm'
+import { godotFloat, godotString, parseMcm, plain, type McmSetting } from '../data/mcm'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 
@@ -192,6 +193,15 @@ function colorSet(s: McmSetting, hex: string): void {
   put(s, `Color(${f(1)}, ${f(3)}, ${f(5)}, ${c?.alpha ?? 1})`)
 }
 
+/** Why a file shows nothing: what the reader found in it */
+const diagnosis = computed(() => {
+  const text = textOf(selectedMod.value, selectedFile.value)
+  const entries = parseMcm(text)
+  const lines = text.split('\n').filter((l) => /^\S[^=]*=\s*\{/.test(l)).length
+  const sections = [...new Set(entries.map((e) => e.section))].join(', ') || 'none'
+  return `${text.length} characters, ${entries.length} entries read (sections: ${sections}), ${lines} lines look like settings`
+})
+
 function shown(v: unknown): string {
   return JSON.stringify(v)
 }
@@ -275,6 +285,7 @@ async function save(): Promise<void> {
 
         <p v-if="groups.length === 0" class="text-sm text-muted-foreground">
           This file has no settings the editor can show.
+          <span class="block text-xs">{{ diagnosis }}</span>
         </p>
 
         <div v-if="master" class="flex items-center gap-3 rounded-md border border-border/60 px-3 py-2">

@@ -20,6 +20,7 @@
 
 ### Fixes
 
+- Mod Settings: settings stored without a saved value (only a default) are listed too, and a file that shows nothing now says what the reader found in it.
 - Modded weapon scenes (SVT-40, ...) that drop a built-in scope in without a scale now draw it at the built-in 0.5 instead of twice that size; suppressors a scene does not place are drawn at the end of the barrel, past the weapon's art (measured against the in-game SVT-40), instead of over the muzzle.
 - Gear Storage no longer lists the equipped weapons as containers (their attachments are edited in the inventory / Edit Loadout).
 - Only mods the active profile loads add items: switched-off copies and extra versions of the same mod (e.g. NARK's Gunworks v0.1.3/v1.3/v1.4 in the RTV Mod Manager library) no longer count.
