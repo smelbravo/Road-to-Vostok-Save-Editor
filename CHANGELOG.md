@@ -19,6 +19,7 @@
 
 ### Fixes
 
+- Gear Storage no longer lists the equipped weapons as containers (their attachments are edited in the inventory / Edit Loadout).
 - Only mods the active profile loads add items: switched-off copies and extra versions of the same mod (e.g. NARK's Gunworks v0.1.3/v1.3/v1.4 in the RTV Mod Manager library) no longer count.
 - Bipod attachments (G28) get their own slot in the weapon workbench.
 - Modded weapon scenes that place vanilla attachments (ACOG, suppressors, ...) with their own position and scale are now followed, instead of using the base weapon's layout, which drew them too small or in the wrong place.

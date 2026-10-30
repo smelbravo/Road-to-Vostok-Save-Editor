@@ -142,6 +142,8 @@ export const storageContainers = computed<StorageContainer[]>(() => {
   if (!c) return []
   const out: StorageContainer[] = []
   for (const item of c.equipment) {
+    // Weapons carry their attachments, they are edited in the inventory / Edit Loadout
+    if (ITEMS_BY_PATH.get(item.itemData)?.category === 'Weapons') continue
     const built = buildContainer(item, item.slot)
     if (built) out.push(built)
   }
