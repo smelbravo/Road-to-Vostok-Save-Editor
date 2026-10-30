@@ -99,6 +99,51 @@ const groups = computed(() =>
 )
 const dirty = computed(() => isDirty(selectedMod.value, selectedFile.value))
 
+// Tabs like MCM Reskin & Tabs: one tab per category, the first "Enable"/"Active" switch of the
+// mod pulled out above the tabs, and a search across all options of the mod
+const UNCATEGORIZED = 'Uncategorized'
+const activeTab = ref('')
+const optionSearch = ref('')
+
+const master = computed<McmSetting | null>(() => {
+  const first = groups.value[0]?.settings[0]
+  if (!first || first.type !== 'Bool') return null
+  const text = `${first.id} ${first.name}`.toLowerCase()
+  return text.includes('enable') || text.includes('active') ? first : null
+})
+
+const tabs = computed(() =>
+  groups.value
+    .map((g) => ({
+      name: g.name || UNCATEGORIZED,
+      settings: g.settings.filter((s) => s !== master.value)
+    }))
+    .filter((g) => g.settings.length > 0)
+)
+
+watch([selectedMod, selectedFile], () => {
+  activeTab.value = ''
+  optionSearch.value = ''
+})
+
+const currentTab = computed(() =>
+  tabs.value.some((t) => t.name === activeTab.value) ? activeTab.value : (tabs.value[0]?.name ?? '')
+)
+
+/** What is drawn: the open tab, or every match across tabs while searching */
+const shownGroups = computed(() => {
+  const q = optionSearch.value.trim().toLowerCase()
+  if (!q) return tabs.value.filter((t) => t.name === currentTab.value)
+  return tabs.value
+    .map((t) => ({
+      name: t.name,
+      settings: t.settings.filter((s) =>
+        `${s.name} ${s.tooltip ?? ''} ${s.id}`.toLowerCase().includes(q)
+      )
+    }))
+    .filter((t) => t.settings.length > 0)
+})
+
 function put(s: McmSetting, valueText: string): void {
   if (!setValue(selectedMod.value, selectedFile.value, s.id, valueText))
     toast.show('Could not change that setting', 'error')
@@ -232,8 +277,44 @@ async function save(): Promise<void> {
           This file has no settings the editor can show.
         </p>
 
-        <section v-for="g in groups" :key="g.name" class="space-y-1">
-          <h3 v-if="g.name" class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <div v-if="master" class="flex items-center gap-3 rounded-md border border-border/60 px-3 py-2">
+          <input
+            type="checkbox"
+            class="h-4 w-4"
+            :checked="master.value === true"
+            @change="put(master, ($event.target as HTMLInputElement).checked ? 'true' : 'false')"
+          />
+          <div class="min-w-0">
+            <div class="text-sm">{{ master.name }}</div>
+            <div v-if="master.tooltip" class="text-xs text-muted-foreground">{{ master.tooltip }}</div>
+          </div>
+        </div>
+
+        <div v-if="tabs.length > 0" class="space-y-2">
+          <Input v-model="optionSearch" placeholder="Search options" class="h-8 text-xs" />
+          <div v-if="!optionSearch.trim() && tabs.length > 1" class="flex flex-wrap gap-1">
+            <button
+              v-for="t in tabs"
+              :key="t.name"
+              class="rounded-md border px-2.5 py-1 text-xs"
+              :class="
+                t.name === currentTab
+                  ? 'border-primary bg-primary/10 text-foreground'
+                  : 'border-border text-muted-foreground hover:bg-muted/60'
+              "
+              @click="activeTab = t.name"
+            >
+              {{ t.name }}
+              <span class="text-muted-foreground">{{ t.settings.length }}</span>
+            </button>
+          </div>
+        </div>
+
+        <section v-for="g in shownGroups" :key="g.name" class="space-y-1">
+          <h3
+            v-if="g.name && (optionSearch.trim() || tabs.length <= 1)"
+            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          >
             {{ g.name }}
           </h3>
           <div
