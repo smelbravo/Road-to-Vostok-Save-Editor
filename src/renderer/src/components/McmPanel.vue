@@ -28,7 +28,6 @@ const iniOf = (profile: string): string =>
   !profile || profile === 'Default' ? 'config.ini' : `${profile}.ini`
 
 const activeProfile = computed(() => modScan.value?.activeProfile || 'Default')
-const activeFile = computed(() => iniOf(activeProfile.value))
 
 // Profile whose settings are shown; the active one unless another is picked
 const pickedProfile = ref('')
