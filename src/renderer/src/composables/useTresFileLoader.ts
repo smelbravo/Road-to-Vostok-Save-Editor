@@ -1,4 +1,5 @@
 import { parseTresFile } from '../lib/tres/parser'
+import { registerEmbeddedItems } from '../data/embedded-items'
 import { serializeTresFile } from '../lib/tres/serializer'
 import {
   parseCharacter,
@@ -41,6 +42,7 @@ export async function init(): Promise<void> {
     const content = await window.api.loadSave('Character.tres')
     const tres = parseTresFile(content)
     tresFile.value = tres
+    registerEmbeddedItems(tres)
     character.value = parseCharacter(tres)
     currentFile.value = 'Character.tres'
     isDirty.value = false

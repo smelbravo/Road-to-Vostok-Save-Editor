@@ -118,12 +118,19 @@ export function extRef(
 ): FieldCodec<string> {
   return {
     default: opts.default,
-    parse: (v, ctx) => (v && v.kind === 'ext_resource' ? resolveExtPath(ctx, v.id) : opts.default),
+    parse: (v, ctx) => {
+      if (v && v.kind === 'ext_resource') return resolveExtPath(ctx, v.id)
+      // An item the game made at run time is saved inside the save file (see data/embedded-items.ts)
+      if (v && v.kind === 'sub_resource') return `embedded://${v.id}`
+      return opts.default
+    },
     serialize: (current, source, ctx) => {
       if (source && source.kind === 'ext_resource') {
         const sourcePath = resolveExtPath(ctx, source.id)
         if (sourcePath === current) return source
       }
+      if (source && source.kind === 'sub_resource' && current === `embedded://${source.id}`)
+        return source
       if (!source && current === opts.default && !opts.required) return null
       // A reference this codec could not turn into a path (an embedded resource, a null) stays as it was
       if (source && source.kind !== 'ext_resource' && current === opts.default) return source

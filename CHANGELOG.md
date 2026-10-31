@@ -20,6 +20,7 @@
 
 ### Fixes
 
+- Furniture (and other items) that a mod creates at run time are stored inside the save with their name, size and icon; the editor now reads them from the save and shows them (Duplicate is not offered for them). Saving keeps them untouched.
 - Mod Settings reads more kinds of values (StringName, `=` separators, unknown tokens), and an empty file now shows the first line the reader could not parse.
 - A reference to an item the editor cannot turn into a file path (modded furniture stored as an embedded resource) is kept as it was when saving instead of being dropped, and such rows get a clear name.
 - Mod Settings: mods the active profile loads show up even when they only wrote `config.ini` (mods that ignore profiles, like Elegant HUD); an empty profile file offers the mod's other files.

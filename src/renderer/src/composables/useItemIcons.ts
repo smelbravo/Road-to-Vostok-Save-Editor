@@ -12,6 +12,13 @@ const iconCache = new Map<string, string | null>()
 // Track pending loads to avoid duplicate requests
 const pendingLoads = new Map<string, Promise<string | null>>()
 
+/** Icons that come with the save itself (items made at run time by a mod), by key */
+const inlineIcons = new Map<string, string>()
+
+export function registerInlineIcon(key: string, dataUrl: string): void {
+  inlineIcons.set(key, dataUrl)
+}
+
 let initialized = false
 let cleanupProgressListener: (() => void) | null = null
 
@@ -83,7 +90,7 @@ async function reload(): Promise<void> {
  * Returns null if not loaded yet — call loadIcon to trigger async load.
  */
 function getCachedIcon(iconFile: string): string | null {
-  return iconCache.get(iconFile) ?? null
+  return inlineIcons.get(iconFile) ?? iconCache.get(iconFile) ?? null
 }
 
 /**
@@ -93,6 +100,8 @@ function getCachedIcon(iconFile: string): string | null {
  * Results are cached — subsequent calls return immediately.
  */
 async function loadIcon(iconFile: string): Promise<string | null> {
+  const inline = inlineIcons.get(iconFile)
+  if (inline) return inline
   if (iconCache.has(iconFile)) return iconCache.get(iconFile)!
 
   // Deduplicate concurrent requests
