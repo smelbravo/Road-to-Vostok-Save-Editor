@@ -45,7 +45,7 @@ function storageLabel(itemPath: string): string {
 }
 
 function handleDuplicate(itemPath: string, condition: number, amount: number): void {
-  if (!itemPath) return
+  if (!itemPath || itemPath.startsWith('embedded://')) return
   const game = ITEMS_BY_PATH.get(itemPath)
   if (!game) return
   const { w, h } = getItemSize(game)
@@ -96,7 +96,7 @@ function handleDuplicate(itemPath: string, condition: number, amount: number): v
             variant="ghost"
             size="sm"
             class="h-6 px-2 text-xs"
-            :disabled="!item.itemPath"
+            :disabled="!item.itemPath || item.itemPath.startsWith('embedded://')"
             @click="handleDuplicate(item.itemPath, item.condition, item.amount)"
           >
             Duplicate
